@@ -18,6 +18,8 @@ include_directories(${PROJECT_BINARY_DIR})
 # add_executable
 set(TEST_FILE_LIST
     test.cpp
+    TwoConnected.cpp
+    TwoConnected.h
     BoostTools.h
     BoostTools.cpp
     Graph.cpp

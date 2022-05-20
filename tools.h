@@ -23,14 +23,16 @@ void printErrorWithLocation(std::string s, const char *FILE__, int LINE__);
 
 void print_with_color(int color_code, std::string s);
 void print_with_colorln(int color_code, std::string s);
-//template <typename T>
+// template <typename T>
 void print_vectorln(std::vector<int> &v);
-//template <typename T>
+// template <typename T>
 void print_setln(std::set<int> &v);
 
 //初始：cnt设置为0，new_val传第一个元素，old_ave 随意给（比如给0）
 void moving_average(double &old_ave, double new_val, int &cnt);
 // return [0,possible_max)
 long long Rand(long long possible_max);
+
+void map_new2old(int start_idx, const std::vector<int> &newv, std::back_insert_iterator<std::vector<int>> old_back_it, std::unordered_map<int, int> &new2old);
 
 #endif //_TOOLS_H

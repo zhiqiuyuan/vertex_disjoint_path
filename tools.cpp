@@ -58,3 +58,12 @@ long long Rand(long long possible_max)
     }
     return re % possible_max;
 }
+
+void map_new2old(int start_idx, const std::vector<int> &newv, std::back_insert_iterator<std::vector<int>> old_back_it, std::unordered_map<int, int> &new2old)
+{
+    int sz = newv.size();
+    for (int i = start_idx; i < sz; ++i)
+    {
+        old_back_it = new2old[newv[i]];
+    }
+}
