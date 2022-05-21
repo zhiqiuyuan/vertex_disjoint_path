@@ -27,6 +27,9 @@ void print_with_colorln(int color_code, std::string s);
 void print_vectorln(std::vector<int> &v);
 // template <typename T>
 void print_setln(std::set<int> &v);
+void print_queueln(std::queue<int> q);
+void print_dequeln(std::deque<int> q);
+void print_umapln(const std::unordered_map<int, int> &mp);
 
 //初始：cnt设置为0，new_val传第一个元素，old_ave 随意给（比如给0）
 void moving_average(double &old_ave, double new_val, int &cnt);

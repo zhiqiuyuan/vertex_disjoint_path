@@ -56,9 +56,11 @@ public:
             neighbors[v].push_back(vid);
         }
     }
+    void print_graph();
+    void print_new2old_graph(const std::unordered_map<int, int> &new2old);
     void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &st_pairs);
 
-    //全图一次性全部加载到内存 // fill Graph member
+    // load total graph into std::vector<std::vector<int>> neighbors
     // return build succeed or not
     virtual bool buildGraph(std::string fname) = 0;
 

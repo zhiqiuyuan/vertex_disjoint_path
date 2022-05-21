@@ -21,6 +21,40 @@ void Graph::generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &s
         st_pairs.insert(std::pair<int, int>(s, t));
     }
 }
+void Graph::print_graph()
+{
+    std::cout << "vertex_num:" << vertex_num << std::endl;
+    std::cout << "neighbors:" << std::endl;
+    for (int i = 0; i < vertex_num; ++i)
+    {
+        std::cout << i << ": ";
+        for (int n : neighbors[i])
+        {
+            std::cout << n << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+void Graph::print_new2old_graph(const std::unordered_map<int, int> &new2old)
+{
+    print_with_colorln(BLUE, "\tmap new to old:");
+    std::cout << "vertex_num:" << vertex_num << std::endl;
+    std::cout << "vertices:";
+    for (int i = 0; i < vertex_num; ++i)
+    {
+        std::cout << new2old.at(i) << " ";
+    }
+    std::cout << "\nneighbors:" << std::endl;
+    for (int i = 0; i < vertex_num; ++i)
+    {
+        std::cout << new2old.at(i) << ": ";
+        for (int n : neighbors[i])
+        {
+            std::cout << new2old.at(n) << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old, const std::vector<int> &V)
 {
@@ -59,6 +93,13 @@ void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old
     g.vertex_num = n; // if commented:WARN!!NO MAPPING NOW!
     s = old2new[s];
     t = old2new[t];
+
+#if DEBUG_LEVEL <= TRACE
+    g.print_graph();
+    g.print_new2old_graph(new2old);
+    print_with_colorln(BLUE, "\told2new:");
+    print_umapln(old2new);
+#endif //#if DEBUG_LEVEL <= TRACE
 }
 void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old, const std::set<int> &V)
 {

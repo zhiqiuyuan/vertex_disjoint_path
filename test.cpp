@@ -2,6 +2,7 @@
 #include "BoostTools.h"
 #include "TwoConnected.h"
 
+#if DEBUG_LEVEL <= TRACE
 // test st_biconnected_component
 //  bin pairs_cnt filename
 int main1(int argc, char **argv)
@@ -167,8 +168,8 @@ int main1(int argc, char **argv)
 }
 
 // test build_bctree
-//  bin pairs_cnt filename
-int main(int argc, char **argv)
+// bin pairs_cnt filename
+int main2(int argc, char **argv)
 {
     // std::ofstream fout("error_log.txt");
     int pairs_cnt = atoi(argv[1]);
@@ -209,7 +210,152 @@ int main(int argc, char **argv)
         print_with_colorln(BLUE, "t_comp:" + std::to_string(t_comp));
 #endif //#if DEBUG_LEVEL <= DEBUG
         std::cout << std::endl;
+
         // g.recover_vertex(s, s_neighbors);
+    }
+    // fout.close();
+    return 0;
+}
+
+// test get_parent_path
+//  bin filename
+int main3(int argc, char **argv)
+{
+    // std::ofstream fout("error_log.txt");
+    std::string fname = argv[1];
+    TVEGraph g;
+    if (g.buildGraph(fname) == 0)
+    {
+        printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
+        return -1;
+    }
+    std::vector<int> ts = {1, 7, 0};
+    std::vector<int> path;
+    std::back_insert_iterator<std::vector<int>> path_back_it(path);
+    for (auto t : ts)
+    {
+        print_with_colorln(RED, " t:" + std::to_string(t));
+        std::vector<int> s_neighbors;
+        std::vector<bctreeNode> bctree;     // idx is comp number too, parent pointer representation
+        int t_comp;                         // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+        std::vector<std::set<int>> comps_V; // comp number->comps vertex set
+        std::vector<std::vector<int>> s_adj_comp;
+        bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
+        print_with_colorln(BLUE, "t_is_cut_point:" + std::to_string(t_is_cut_point));
+        print_bctree_vector(bctree);
+        print_comps_V(comps_V);
+        for (size_t i = 0; i < comps_V.size(); ++i)
+        {
+            for (int startv : comps_V[i])
+            {
+                std::cout << "start_comp(" << i << ")startv:" << startv << "->" << t << ":" << std::endl;
+                path.clear();
+                get_parent_path(i, startv, t, path_back_it, g, bctree, comps_V);
+                print_vectorln(path);
+            }
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+
+        // g.recover_vertex(s, s_neighbors);
+    }
+    // fout.close();
+    return 0;
+}
+
+// test no_common_ancestor get_cut_point_path
+// bin
+int main4(int argc, char **argv)
+{
+    std::vector<bctreeNode> bctree = {
+        // parent cutpoint
+        {3, 0},
+        {2, 1},
+        {3, 2},
+        {10, 3},
+        {2, 4},
+        {10, 5},
+        {5, 6},
+        {5, 7},
+        {6, 8},
+        {7, 9},
+        {-1, 10}};
+    std::vector<int> leaves = {8, 9, 0, 1, 4};
+    int n = 11;
+    int t_comp = 10;
+    print_with_colorln(BLUE, "comp:\tancestor");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << get_root_comp(i, bctree, t_comp) << std::endl;
+    }
+    int compu, compv, u, v;
+    std::vector<std::vector<int>> s_adj_comp = {
+        {8, 1},
+        {9},
+        {4}};
+    /*
+    {8},
+        {9},
+        {1},
+        {4}};
+    */
+    /*no_common_ancestor(compu, compv, u, v, s_adj_comp, bctree, t_comp);
+    std::cout << "comp\tidx\n"
+              << compu << "\t" << u << "\n"
+              << compv << "\t" << v << std::endl;*/
+    int t = 10;
+    std::vector<int> cppath;
+    std::back_insert_iterator<std::vector<int>> cppath_back_it(cppath);
+    for (int leafcomp : leaves)
+    {
+        cppath.clear();
+        std::cout << "leafcomp:" << leafcomp << std::endl;
+        get_cut_point_path(leafcomp, leafcomp, t, bctree, cppath_back_it);
+        for (size_t i = 1; i < cppath.size(); ++i)
+        {
+            std::cout << cppath[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
+
+#endif //#if DEBUG_LEVEL <= TRACE
+
+// test solve_2VDPP
+// bin pairs_cnt filename
+int main(int argc, char **argv)
+{
+    // std::ofstream fout("error_log.txt");
+    int pairs_cnt = atoi(argv[1]);
+    std::string fname = argv[2];
+    TVEGraph g;
+    if (g.buildGraph(fname) == 0)
+    {
+        printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
+        return -1;
+    }
+    std::set<std::pair<int, int>> st_pairs;
+    /*
+    long long n = g.vertexnum();
+    long long pairs_upper = n * (n - 1) / 2;
+    if (pairs_cnt > pairs_upper)
+    {
+        pairs_cnt = pairs_upper;
+    }
+    srand(time(0));
+    g.generate_rand_vpairs(pairs_cnt, st_pairs);
+    */
+    int s, t;
+    st_pairs = {{0, 9}};
+    for (auto pair : st_pairs)
+    {
+        s = pair.first;
+        t = pair.second;
+        print_with_colorln(RED, "s:" + std::to_string(s) + " t:" + std::to_string(t));
+        solve_2VDPP(g, s, t);
+        std::cout << std::endl;
     }
     // fout.close();
     return 0;

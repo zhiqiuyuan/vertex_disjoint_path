@@ -26,6 +26,31 @@ void print_setln(std::set<int> &v)
     }
     std::cout << std::endl;
 }
+void print_queueln(std::queue<int> q)
+{
+    while (q.empty() == 0)
+    {
+        std::cout << q.front() << " ";
+        q.pop();
+    }
+    std::cout << std::endl;
+}
+void print_dequeln(std::deque<int> q)
+{
+    for (int i : q)
+    {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+}
+void print_umapln(const std::unordered_map<int, int> &mp)
+{
+    for (auto p : mp)
+    {
+        std::cout << p.first << ":" << p.second << " ";
+    }
+    std::cout << std::endl;
+}
 
 void Assert(bool exp, std::string s)
 {
