@@ -89,6 +89,12 @@ void map_new2old(int start_idx, const std::vector<int> &newv, std::back_insert_i
     int sz = newv.size();
     for (int i = start_idx; i < sz; ++i)
     {
+#if DEBUG_LEVEL <= TRACE
+        std::cout << new2old[newv[i]] << " ";
+#endif //#if DEBUG_LEVEL <= TRACE
         old_back_it = new2old[newv[i]];
     }
+#if DEBUG_LEVEL <= TRACE
+    std::cout << std::endl;
+#endif //#if DEBUG_LEVEL <= TRACE
 }

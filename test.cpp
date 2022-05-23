@@ -330,7 +330,8 @@ int main(int argc, char **argv)
     // std::ofstream fout("error_log.txt");
     int pairs_cnt = atoi(argv[1]);
     std::string fname = argv[2];
-    TVEGraph g;
+    // TVEGraph g;
+    EGraph g;
     if (g.buildGraph(fname) == 0)
     {
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
@@ -348,7 +349,7 @@ int main(int argc, char **argv)
     g.generate_rand_vpairs(pairs_cnt, st_pairs);
     */
     int s, t;
-    st_pairs = {{0, 9}};
+    st_pairs = {{9, 4}};
     for (auto pair : st_pairs)
     {
         s = pair.first;

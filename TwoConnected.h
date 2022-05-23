@@ -34,8 +34,8 @@ bool st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, 
     0:no solution*/
 enum Remove2VCutSel
 {
-    REMOVE_S,
-    REMOVE_T
+    REMOVE_S, // return path s->t
+    REMOVE_T  // return path t->s
 };
 // WARN!!未测试
 int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);

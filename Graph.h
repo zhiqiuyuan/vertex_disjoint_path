@@ -56,6 +56,34 @@ public:
             neighbors[v].push_back(vid);
         }
     }
+    std::vector<int> intersect_neighbors(int s, int t)
+    {
+        assert(s >= 0 && s < vertex_num && t >= 0 && t < vertex_num);
+        std::vector<int> nbrs1 = neighbors[s], nbrs2 = neighbors[t];
+        std::sort(nbrs1.begin(), nbrs1.end());
+        std::sort(nbrs2.begin(), nbrs2.end());
+        std::vector<int> re;
+        int i1 = 0, i2 = 0;
+        int e1 = nbrs1.size(), e2 = nbrs2.size();
+        while (i1 < e1 && i2 < e2)
+        {
+            if (nbrs1[i1] == nbrs2[i2])
+            {
+                re.push_back(nbrs1[i1]);
+                i1++;
+                i2++;
+            }
+            else if (nbrs1[i1] < nbrs2[i2])
+            {
+                i1++;
+            }
+            else
+            {
+                i2++;
+            }
+        }
+        return re;
+    }
     void print_graph();
     void print_new2old_graph(const std::unordered_map<int, int> &new2old);
     void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &st_pairs);

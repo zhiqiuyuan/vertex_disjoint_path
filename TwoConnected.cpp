@@ -157,7 +157,7 @@ bool st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, 
     }
     return 0;
 }
-
+// remove_2vCut_containing_s 注意st交替调用怎么重组路径
 int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
 {
     /*remove 2-vertex-cut containing s*/
@@ -188,6 +188,7 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
             for (int comp : s_adj_comp[i])
                 comp2s_nbrs[comp].push_back(s_neighbors[i]);
         }
+        /*below: "s" "t" means params*/
         if (t_is_cut_point) //此分支测试近似无误 path1: 0 2 9 path2: 0 5 9
         {
             int compu, compv;
@@ -197,20 +198,33 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
             v = s_neighbors[v];
             std::vector<int> u2t, v2t;
             std::back_insert_iterator<std::vector<int>> u2t_back_it(u2t), v2t_back_it(v2t);
-            // t(i.e. root of bctree) is cutpoint,thus t is the destination of the last path segment
+            // "t"(i.e. root of bctree) is cutpoint,thus "t" is the destination of the last path segment
             get_parent_path(compu, u, t, u2t_back_it, g, bctree, comps_V);
             get_parent_path(compv, v, t, v2t_back_it, g, bctree, comps_V);
 #if DEBUG_LEVEL <= TRACE
             print_vectorln(u2t);
             print_vectorln(v2t);
-#endif                         //#if DEBUG_LEVEL <= TRACE
-            path1_back_it = s; // Using the assignment operator on the back_insert_iterator (both while being dereferenced or not), causes the container to expand by one element, which is initialized to the value assigned.
-            std::copy(u2t.begin(), u2t.end(), path1_back_it);
-            path2_back_it = s;
-            std::copy(v2t.begin(), v2t.end(), path2_back_it);
+#endif //#if DEBUG_LEVEL <= TRACE
+
+            //"s"->u-->"t"
+            //"s"->v-->"t"
+            if (sel == REMOVE_S)
+            {
+                path1_back_it = s; // Using the assignment operator on the back_insert_iterator (both while being dereferenced or not), causes the container to expand by one element, which is initialized to the value assigned.
+                std::copy(u2t.begin(), u2t.end(), path1_back_it);
+                path2_back_it = s;
+                std::copy(v2t.begin(), v2t.end(), path2_back_it);
+            }
+            else
+            {
+                path1_back_it = t;
+                std::copy(u2t.cbegin(), u2t.cend(), path1_back_it);
+                path2_back_it = t;
+                std::copy(v2t.cbegin(), v2t.cend(), path2_back_it);
+            }
             return 1;
         }
-        // t is not cut point
+        // "t" is not cut point
         else
         {
             if (comp2s_nbrs.count(t_comp))
@@ -218,7 +232,7 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                 std::vector<int> link_ends = comp2s_nbrs[t_comp];
                 if (link_ends.size() >= 2) // u v
                 {
-                    // new g: b(t), edge(s,u), edge(s,v)
+                    // new g: b("t"), edge("s",u), edge("s",v)
                     std::unordered_map<int, int> new2old;
                     g.recover_vertex(s, {link_ends[0], link_ends[1]});
                     comps_V[t_comp].insert(s);
@@ -230,16 +244,22 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                     write_graph(g, s, t, new2old, comps_V[t_comp]);
                     // comps_V[t_comp].erase(old_s);
 
-                    /*remove 2-vertex-cut containing t*/
                     std::vector<int> p1, p2;
                     std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
                     int code;
                     if (sel == REMOVE_S)
                         code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
                     else
-                        code = remove_2vCut_containing_s(REMOVE_S, g, s, t, p1_back_it, p2_back_it);
+                        code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
                     if (code)
                     {
+#if DEBUG_LEVEL <= TRACE
+                        // sel == REMOVE_S: new"s"->new"t"
+                        // sel == REMOVE_T: new"t"->new"s"
+                        print_vectorln(p1);
+                        print_vectorln(p2);
+#endif //#if DEBUG_LEVEL <= TRACE
+
                         // translate path
                         map_new2old(0, p1, path1_back_it, new2old);
                         map_new2old(0, p2, path2_back_it, new2old);
@@ -248,11 +268,11 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                 }
                 else // u
                 {
-                    // new g: b(t), edge(s,u), edge(s,v)
-                    // in which v is: start from any s_adj_comp(except b(t)) start_comp (parent path), the cut point adjancent to t
+                    // new g: b("t"), edge("s",u), edge("s",v)
+                    // in which v is: start from any "s"_adj_comp(except b("t")) start_comp (parent path), the cut point adjancent to "t"
                     int u = link_ends[0];
                     int start_comp;
-                    // must exist: s has only 1 link to b(t), given original G 2connected, there must be another link from s to other comp
+                    // must exist: "s" has only 1 link to b("t"), given original G 2connected, there must be another link from "s" to other comp
                     for (auto p : comp2s_nbrs)
                     {
                         if (p.first != t_comp)
@@ -261,15 +281,18 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                             break;
                         }
                     }
-                    // s->k-(parent path)->v-(t_comp)->t
+                    // "s"->k-(parent path)->v-(t_comp)->"t"
                     int k = comp2s_nbrs[start_comp][0];
                     std::vector<int> k2v, k2t_cutpoint;
                     std::back_insert_iterator<std::vector<int>> k2v_back_it(k2v), k2t_cutpoint_back_it(k2t_cutpoint);
                     get_cut_point_path(start_comp, k, t, bctree, k2t_cutpoint_back_it);
                     int v = k2t_cutpoint[k2t_cutpoint.size() - 2]; // last is t, the second last is v (2nd last must exist, otherwise this s_nbr is located in b(t), which contradict with only one link from s to b(t))
                     get_parent_path(start_comp, k, v, k2v_back_it, g, bctree, comps_V);
+#if DEBUG_LEVEL <= TRACE
+                    print_vectorln(k2v);
+#endif //#if DEBUG_LEVEL <= TRACE
 
-                    // new g: b(t), edge(s,u), edge(s,v)
+                    // new g: b("t"), edge("s",u), edge("s",v)
                     std::unordered_map<int, int> new2old;
                     g.recover_vertex(s, {u, v});
                     comps_V[t_comp].insert(s);
@@ -280,40 +303,72 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 #endif //#if DEBUG_LEVEL <= DEBUG
                     write_graph(g, s, t, new2old, comps_V[t_comp]);
                     // comps_V[t_comp].erase(old_s);
-                    std::vector<int> p1, p2; // s->u-->t, s->v-->t
+                    std::vector<int> p1, p2;
                     std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
                     int code;
                     if (sel == REMOVE_S)
                         code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
                     else
-                        code = remove_2vCut_containing_s(REMOVE_S, g, s, t, p1_back_it, p2_back_it);
+                        code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
                     if (code)
                     {
+#if DEBUG_LEVEL <= TRACE
+                        print_vectorln(k2v);
+                        print_vectorln(p1);
+                        print_vectorln(p2);
+#endif //#if DEBUG_LEVEL <= TRACE
+
                         // assemble and translate path
-                        // path1: s->k-->v-->t (p1/2 is s->v-->t)
-                        // path2: s->u-->t (p2/1 is s->u-->t)
-                        path1_back_it = new2old[s];
-                        std::copy(k2v.begin(), k2v.end(), path1_back_it);
-                        if (p1[1] == v)
+                        // k2v: "s"->k-(parent path)->v-(t_comp)->"t"
+
+                        // sel == REMOVE_S: p1p2: new"s"->new"t"
+                        // path1: "s"->k-->v-->"t" (p1/2 is "s"->v-->"t") "s"+k2v+p1/2[2:]
+                        // path2: "s"->u-->"t" (p2/1 is "s"->u-->"t") p2/1
+                        if (sel == REMOVE_S)
                         {
-                            map_new2old(2, p1, path1_back_it, new2old);
-                            map_new2old(0, p2, path2_back_it, new2old);
+                            path1_back_it = new2old[s];
+                            std::copy(k2v.begin(), k2v.end(), path1_back_it);
+                            if (new2old[p1[1]] == v)
+                            {
+                                map_new2old(2, p1, path1_back_it, new2old);
+                                map_new2old(0, p2, path2_back_it, new2old);
+                            }
+                            else
+                            {
+                                map_new2old(2, p2, path1_back_it, new2old);
+                                map_new2old(0, p1, path2_back_it, new2old);
+                            }
                         }
+                        // sel == REMOVE_T: p1p2: new"t"->new"s"
+                        // path1: "t"-->v-->k->"s" (p1/2 is "t"-->v->"s") p1/2[:-2]+k2v.rev+"s"
+                        // path2: "t"-->u->"s" (p2/1 is "t"-->u->"s") p2/1
                         else
                         {
-                            map_new2old(2, p2, path1_back_it, new2old);
-                            map_new2old(0, p1, path2_back_it, new2old);
+                            if (new2old[p1[1]] == v)
+                            {
+                                p1.pop_back(); // pop "s"
+                                p1.pop_back(); // pop v
+                                map_new2old(0, p1, path1_back_it, new2old);
+                                map_new2old(0, p2, path2_back_it, new2old);
+                            }
+                            else
+                            {
+                                p2.pop_back(); // pop "s"
+                                p2.pop_back(); // pop v
+                                map_new2old(0, p2, path1_back_it, new2old);
+                                map_new2old(0, p1, path2_back_it, new2old);
+                            }
+                            std::copy(k2v.cbegin(), k2v.cend(), path1_back_it);
+                            path1_back_it = new2old[s];
                         }
                     }
                     return code;
                 }
             }
-            // s no link to b(t)
+            // "s" no link to b("t")
             else
             {
-                // path1:s->k1-(parent path)->a-(t_comp)->t
-                // path2:s->k2-(parent path)->b-(t_comp)->t
-                // new g: b(t), edge(s,a), edge(s,b)
+                // new g: b("t"), edge("s",a), edge("s",b)
                 int start_comp1, start_comp2;
                 int k1, k2;
                 no_common_ancestor(start_comp1, start_comp2, k1, k2, s_adj_comp, bctree, t_comp);
@@ -328,7 +383,12 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                 int b = k22t_cutpoint[k22t_cutpoint.size() - 2]; // last is t, the second last is b
                 get_parent_path(start_comp2, k2, b, k22b_back_it, g, bctree, comps_V);
 
-                // new g: b(t), edge(s,a), edge(s,b)
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(k12a);
+                print_vectorln(k22b);
+#endif //#if DEBUG_LEVEL <= TRACE
+
+                // new g: b("t"), edge("s",a), edge("s",b)
                 std::unordered_map<int, int> new2old;
                 g.recover_vertex(s, {a, b});
                 comps_V[t_comp].insert(s);
@@ -339,31 +399,69 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 #endif //#if DEBUG_LEVEL <= DEBUG
                 write_graph(g, s, t, new2old, comps_V[t_comp]);
                 // comps_V[t_comp].erase(old_s);
-                std::vector<int> p1, p2; // s->a-->t, s->b-->t
+                std::vector<int> p1, p2;
                 std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
                 int code;
                 if (sel == REMOVE_S)
                     code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
                 else
-                    code = remove_2vCut_containing_s(REMOVE_S, g, s, t, p1_back_it, p2_back_it);
+                    code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
                 if (code)
                 {
+#if DEBUG_LEVEL <= TRACE
+                    print_vectorln(k12a);
+                    print_vectorln(k22b);
+                    print_vectorln(p1);
+                    print_vectorln(p2);
+#endif //#if DEBUG_LEVEL <= TRACE
+
                     // assemble and translate path
-                    // path1: s->k1-->a-->t (p1/2 is s->a-->t)
-                    // path2: s->k2-->b-->t (p2/1 is s->b-->t)
-                    path1_back_it = new2old[s];
-                    std::copy(k12a.begin(), k12a.end(), path1_back_it);
-                    path2_back_it = new2old[s];
-                    std::copy(k22b.begin(), k22b.end(), path2_back_it);
-                    if (p1[1] == a)
+                    // k12a:"s"->k1-(parent path)->a-(t_comp)->"t"
+                    // k22b:"s"->k2-(parent path)->b-(t_comp)->"t"
+
+                    // sel == REMOVE_S: p1p2: new"s"->new"t"
+                    // path1: "s"->k1-->a-->"t" (p1/2 is "s"->a-->"t") "s"+k12a+p1/2[2:]
+                    // path2: "s"->k2-->b-->"t" (p2/1 is "s"->b-->"t") "s"+k22b+p2/1[2:]
+                    if (sel == REMOVE_S)
                     {
-                        map_new2old(2, p1, path1_back_it, new2old);
-                        map_new2old(2, p2, path2_back_it, new2old);
+                        path1_back_it = new2old[s];
+                        std::copy(k12a.begin(), k12a.end(), path1_back_it);
+                        path2_back_it = new2old[s];
+                        std::copy(k22b.begin(), k22b.end(), path2_back_it);
+                        if (new2old[p1[1]] == a)
+                        {
+                            map_new2old(2, p1, path1_back_it, new2old);
+                            map_new2old(2, p2, path2_back_it, new2old);
+                        }
+                        else
+                        {
+                            map_new2old(2, p2, path1_back_it, new2old);
+                            map_new2old(2, p1, path2_back_it, new2old);
+                        }
                     }
+                    // sel == REMOVE_T: p1p2: new"t"->new"s"
+                    // path1: "t"-->a-->k1->"s" (p1/2 is "t"-->a->"s") p1/2[:-2]+k12a.rev+"s"
+                    // path2: "t"-->b-->k2->"s" (p2/1 is "t"-->b->"s") p2/1[:-2]+k22b.rev+"s"
                     else
                     {
-                        map_new2old(2, p2, path1_back_it, new2old);
-                        map_new2old(2, p1, path2_back_it, new2old);
+                        if (new2old[p1[1]] == a)
+                        {
+                            p1.pop_back(); // pop "s"
+                            p1.pop_back(); // pop a
+                            map_new2old(0, p1, path1_back_it, new2old);
+                            map_new2old(0, p2, path2_back_it, new2old);
+                        }
+                        else
+                        {
+                            p2.pop_back(); // pop "s"
+                            p2.pop_back(); // pop a
+                            map_new2old(0, p2, path1_back_it, new2old);
+                            map_new2old(0, p1, path2_back_it, new2old);
+                        }
+                        std::copy(k12a.cbegin(), k12a.cend(), path1_back_it);
+                        path1_back_it = new2old[s];
+                        std::copy(k22b.cbegin(), k22b.cend(), path2_back_it);
+                        path2_back_it = new2old[s];
                     }
                 }
                 return code;
@@ -394,7 +492,7 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 #if DEBUG_LEVEL <= DEBUG
             print_with_colorln(DARK_YELLOW, "remove all 2vertexcut containing s or t done. goto remove_2vCut");
 #endif //#if DEBUG_LEVEL <= DEBUG
-            return remove_2vCut(g, s, t, path1_back_it, path2_back_it);
+            return remove_2vCut(g, t, s, path1_back_it, path2_back_it);
         }
     }
 }
@@ -907,5 +1005,18 @@ void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bc
 
 int remove_2vCut(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
 {
-    return 0;
+    std::vector<int> st_nbrs = g.intersect_neighbors(s, t);
+    path1_back_it = s;
+    if (st_nbrs.size() > 0)
+    {
+        path1_back_it = st_nbrs[0];
+    }
+    path1_back_it = t;
+    path2_back_it = s;
+    if (st_nbrs.size() > 1)
+    {
+        path2_back_it = st_nbrs[1];
+    }
+    path2_back_it = t;
+    return 1;
 }

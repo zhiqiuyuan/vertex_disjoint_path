@@ -2,7 +2,7 @@
 #define _CONFIG_H
 
 // debug output level
-#define DEBUG_LEVEL 1 // output all higher and equal
+#define DEBUG_LEVEL 0 // output all higher and equal
 #define ERROR 4
 #define WARN 3
 #define INFO 2
