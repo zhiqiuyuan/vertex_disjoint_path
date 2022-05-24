@@ -3,6 +3,7 @@
 bool TVEGraph::buildGraph(std::string fname)
 {
     std::ifstream fin(fname);
+    std::cout << fname << std::endl;
     if (fin.is_open() == 0)
     {
         ("file open failed:" + fname);

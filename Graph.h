@@ -12,7 +12,20 @@ protected:
     int vertex_num;
 
 public:
+    Graph() : vertex_num(0) {}
     int vertexnum() { return vertex_num; }
+    int add_vertex()
+    {
+        ++vertex_num;
+        neighbors.push_back({});
+        return vertex_num;
+    }
+    void add_edge(int s, int t)
+    {
+        assert(s >= 0 && s < vertex_num && t >= 0 && t < vertex_num);
+        neighbors[s].push_back(t);
+        neighbors[t].push_back(s);
+    }
     int get_degree(int vid)
     {
         assert(vid >= 0 && vid < vertex_num);

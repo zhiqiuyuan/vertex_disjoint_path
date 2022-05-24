@@ -14,6 +14,7 @@
 #include <climits>
 #include <chrono>
 #include <ctime>
+#include <functional>
 #include <assert.h>
 
 #include "config.h"

@@ -15,15 +15,13 @@ STEP1: reduce to 3 connected
     remove 2-vertex-cut containing s
     remove 2-vertex-cut containing t*/
 
-// WARN!!未测试
 /*g: general graph*/
-void solve_2VDPP(Graph &g, int s, int t);
+int solve_2VDPP(Graph &g, int s, int t);
 
-// WARN!!未测试
 // g is 2connected
 // return 2VDPP has solution or not, if yes return solution in path1 and path2
 // path1 and path2 are passed as empty
-bool solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
+int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
 
 // do bctree decomposing from s, stop when finishing block(s)
 // return whether block(s)==block(t), and if so, write block(s) to g and return new2old mapping
@@ -31,13 +29,13 @@ bool st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, 
 
 /*return:
     1:solved
-    0:no solution*/
+    0:no solution
+    2(TIME_EXCEED_RESULT): time limit exceed*/
 enum Remove2VCutSel
 {
     REMOVE_S, // return path s->t
     REMOVE_T  // return path t->s
 };
-// WARN!!未测试
 int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
 
 struct bctreeNode
@@ -99,7 +97,7 @@ void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bc
 // WARN!!未实现 未测试
 /*remove all 2-vertex-cut in g
 given g: 2connected, any 2-vertex-cut excludes s or t
-return: 1:solved 0:no solution*/
+return: 1:solved 0:no solution 2(TIME_EXCEED_RESULT): time limit exceed*/
 int remove_2vCut(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
 
 #endif //_TWOCONNECTED_H

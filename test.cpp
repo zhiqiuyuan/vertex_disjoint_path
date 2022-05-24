@@ -2,6 +2,10 @@
 #include "BoostTools.h"
 #include "TwoConnected.h"
 
+#if TIME_KILL_ENABLE == 1
+std::chrono::_V2::system_clock::time_point ctrl_start;
+#endif //#if TIME_KILL_ENABLE == 1
+
 #if DEBUG_LEVEL <= TRACE
 // test st_biconnected_component
 //  bin pairs_cnt filename
@@ -323,13 +327,11 @@ int main4(int argc, char **argv)
 
 #endif //#if DEBUG_LEVEL <= TRACE
 
-// test solve_2VDPP
-// bin pairs_cnt filename
-int main(int argc, char **argv)
+// standard biconnected_component_decompose
+// bin filename
+int main5(int argc, char **argv)
 {
-    // std::ofstream fout("error_log.txt");
-    int pairs_cnt = atoi(argv[1]);
-    std::string fname = argv[2];
+    std::string fname = argv[1];
     // TVEGraph g;
     EGraph g;
     if (g.buildGraph(fname) == 0)
@@ -337,6 +339,31 @@ int main(int argc, char **argv)
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
+    std::vector<int> s_neighbors = g.delete_vertex(3);
+    int s = 3;
+    int t = 0;
+    graph_t bg;
+    to_boost_graph(bg, g);
+    std::vector<Edge> before, after;
+    st_biconnected_component(bg, s, t, before, after, 1); // s is root
+    return 0;
+}
+
+// test solve_2VDPP
+// bin pairs_cnt filename
+int main(int argc, char **argv)
+{
+    // std::ofstream fout("error_log.txt");
+    int pairs_cnt = atoi(argv[1]);
+    std::string fname = argv[2];
+    TVEGraph g, g_copy;
+    // EGraph g, g_copy;
+    if (g.buildGraph(fname) == 0)
+    {
+        printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
+        return -1;
+    }
+    g_copy = g;
     std::set<std::pair<int, int>> st_pairs;
     /*
     long long n = g.vertexnum();
@@ -348,8 +375,17 @@ int main(int argc, char **argv)
     srand(time(0));
     g.generate_rand_vpairs(pairs_cnt, st_pairs);
     */
+    /*
+    for (int i = 0; i < 10; ++i)
+    {
+        for (int j = i + 1; j < 10; ++j)
+        {
+            st_pairs.insert({i, j});
+        }
+    }
+    */
     int s, t;
-    st_pairs = {{9, 4}};
+    st_pairs = {{107, 263249}};
     for (auto pair : st_pairs)
     {
         s = pair.first;
@@ -357,6 +393,7 @@ int main(int argc, char **argv)
         print_with_colorln(RED, "s:" + std::to_string(s) + " t:" + std::to_string(t));
         solve_2VDPP(g, s, t);
         std::cout << std::endl;
+        g = g_copy;
     }
     // fout.close();
     return 0;

@@ -16,6 +16,18 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
 # add_executable
+set(DATASET_FILE_LIST
+    dataset.cpp
+    Graph.cpp
+    Graph.h
+    DataSetGraph.cpp
+    DataSetGraph.h
+    tools.cpp
+    tools.h
+    config.h
+)
+add_executable(dataset ${DATASET_FILE_LIST})
+
 set(TEST_FILE_LIST
     test.cpp
     TwoConnected.cpp
@@ -31,3 +43,19 @@ set(TEST_FILE_LIST
     config.h
 )
 add_executable(test ${TEST_FILE_LIST})
+
+set(MAIN_FILE_LIST
+    main.cpp
+    TwoConnected.cpp
+    TwoConnected.h
+    BoostTools.h
+    BoostTools.cpp
+    Graph.cpp
+    Graph.h
+    DataSetGraph.cpp
+    DataSetGraph.h
+    tools.cpp
+    tools.h
+    config.h
+)
+add_executable(main ${MAIN_FILE_LIST})
