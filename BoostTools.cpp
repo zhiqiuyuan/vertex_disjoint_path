@@ -127,3 +127,83 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     }
     return st_one_block;
 }
+
+bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old)
+{
+    int n = g.vertexnum();
+
+    std::vector<int> num(n), par(n), low(n), art(n), stk;
+    std::vector<int> comp;
+    bool contain_s, contain_t;
+    std::function<bool(int, int, int &)> dfs = [&](int u, int p, int &dfs_number)
+    {
+        par[u] = p;
+        num[u] = low[u] = ++dfs_number;
+        stk.push_back(u);
+
+        for (int v : g.get_neighbors(u))
+        {
+            if (v != p)
+            {
+                if (!num[v])
+                {
+                    if (dfs(v, u, dfs_number))
+                    {
+                        return 1;
+                    }
+                    low[u] = std::min(low[u], low[v]);
+
+                    if (low[v] >= num[u])
+                    {
+                        art[u] = (num[u] > 1 || num[v] > 2);
+                        comp.clear();
+                        comp.push_back(u);
+                        contain_s = (u == s);
+                        contain_t = (u == t);
+                        while (comp.back() != v)
+                        {
+                            int tmpv = stk.back();
+                            if (tmpv == s)
+                            {
+                                contain_s = 1;
+                            }
+                            if (tmpv == t)
+                            {
+                                contain_t = 1;
+                            }
+                            comp.push_back(tmpv);
+                            stk.pop_back();
+                        }
+                        if (contain_s && contain_t)
+                        {
+                            write_graph(g, s, t, new2old, comp);
+                            return 1;
+                        }
+                    }
+                }
+                else
+                    low[u] = std::min(low[u], num[v]);
+            }
+        }
+        return 0;
+    };
+
+    int dfs_number = 0;
+    bool re = dfs(s, -1, dfs_number);
+    print_with_colorln(BLUE, "vid\tlowpt:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << low[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tdfsnumber:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << num[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tpar:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << par[i] << std::endl;
+    }
+    return re;
+}

@@ -25,7 +25,8 @@ int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::v
 
 // do bctree decomposing from s, stop when finishing block(s)
 // return whether block(s)==block(t), and if so, write block(s) to g and return new2old mapping
-bool st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old);
+// return 2 if time exceed
+int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old);
 
 /*return:
     1:solved
@@ -48,7 +49,7 @@ struct bctreeNode
 };
 
 /*build_bctree rooted at t or b(t)
-return t_is_cutpoint
+return t_is_cutpoint, or 2 time exceed
 return by reference(passed in as empty):
     std::vector<bctreeNode> bctree;                        // idx is comp number too, parent pointer representation
     int t_comp;                                            // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
@@ -57,7 +58,7 @@ return by reference(passed in as empty):
 each bctreeNode.parent==-1 will have bctreeNode.cut_point==t
 (eg,if t is not cut point: will still have bctreeNode(block(t)).cut_point==t)
 */
-bool build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp);
+int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp);
 #if DEBUG_LEVEL <= DEBUG
 void print_bctree_vector(const std::vector<bctreeNode> &bctree);
 void print_comps_V(const std::vector<std::set<int>> &comps_V);

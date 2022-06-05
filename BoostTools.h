@@ -57,4 +57,7 @@ void to_boost_graph(graph_t &g, Graph &src);
 // and return s t after mapping
 bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &before, std::vector<Edge> &after, bool print_comp_detail);
 
+// correct, but stack overflow is possible for big graph like amazon6061
+bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old);
+
 #endif //_BOOSTTOOLS_H

@@ -329,28 +329,65 @@ int main4(int argc, char **argv)
 
 // standard biconnected_component_decompose
 // bin filename
+// 5
 int main5(int argc, char **argv)
 {
     std::string fname = argv[1];
+    std::cout << fname << std::endl;
     // TVEGraph g;
-    EGraph g;
+    EGraph g, g_copy;
     if (g.buildGraph(fname) == 0)
     {
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
     std::vector<int> s_neighbors = g.delete_vertex(3);
-    int s = 3;
-    int t = 0;
+
+    g_copy = g;
+    int s = 0;
+    int t = 4;
+    std::unordered_map<int, int> new2old;
+    /* my root:s*/
+    // st_biconnected_component(g, s, t, new2old);
+
+    /* rec function call, stack overflow when tesing on big graph root:s*/
+    ///*
+    new2old.clear();
+    g = g_copy;
+    rec_st_biconnected_component(g, s, t, new2old);
+    //*/
+
+    /* boost std root:s*/
+    /*
+    g = g_copy;
     graph_t bg;
     to_boost_graph(bg, g);
     std::vector<Edge> before, after;
     st_biconnected_component(bg, s, t, before, after, 1); // s is root
+    */
+
+    /* my build_bctree root:t*/
+    ///*
+    std::vector<bctreeNode> bctree;     // idx is comp number too, parent pointer representation
+    int t_comp;                         // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+    std::vector<std::set<int>> comps_V; // comp number->comps vertex set
+    std::vector<std::vector<int>> s_adj_comp;
+    t = s;
+    bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
+#if DEBUG_LEVEL <= DEBUG
+    print_with_colorln(BLUE, "t_is_cut_point:" + std::to_string(t_is_cut_point));
+    print_bctree_vector(bctree);
+    print_comps_V(comps_V);
+    // print_s_adj_comp(s_adj_comp, s_neighbors);
+    print_with_colorln(BLUE, "t_comp:" + std::to_string(t_comp));
+#endif //#if DEBUG_LEVEL <= DEBUG
+       //*/
     return 0;
 }
 
 // test solve_2VDPP
 // bin pairs_cnt filename
+// 6
 int main(int argc, char **argv)
 {
     // std::ofstream fout("error_log.txt");
@@ -365,16 +402,6 @@ int main(int argc, char **argv)
     }
     g_copy = g;
     std::set<std::pair<int, int>> st_pairs;
-    /*
-    long long n = g.vertexnum();
-    long long pairs_upper = n * (n - 1) / 2;
-    if (pairs_cnt > pairs_upper)
-    {
-        pairs_cnt = pairs_upper;
-    }
-    srand(time(0));
-    g.generate_rand_vpairs(pairs_cnt, st_pairs);
-    */
     /*
     for (int i = 0; i < 10; ++i)
     {

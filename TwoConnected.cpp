@@ -13,11 +13,12 @@ int solve_2VDPP(Graph &g, int s, int t)
 #if TIME_KILL_ENABLE == 1
     ctrl_start = std::chrono::system_clock::now();
 #endif //#if TIME_KILL_ENABLE==1
-    if (st_biconnected_component(g, s, t, new2old))
+    int code = st_biconnected_component(g, s, t, new2old);
+    if (code == 1)
     {
         std::vector<int> p1, p2;
         std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
-        int code = solve_on_2connected(g, s, t, p1_back_it, p2_back_it);
+        code = solve_on_2connected(g, s, t, p1_back_it, p2_back_it);
         if (code == 1)
         {
             // translate path
@@ -28,11 +29,18 @@ int solve_2VDPP(Graph &g, int s, int t)
             print_vectorln(path1);
             print_with_color(RED, "path2: ");
             print_vectorln(path2);
+            return code;
         }
+    }
+#if TIME_KILL_ENABLE == 1
+    if (code == TIME_EXCEED_RESULT)
+    {
+        print_with_colorln(RED, "time limit exceed.");
         return code;
     }
+#endif //#if TIME_KILL_ENABLE==1
     print_with_colorln(RED, "no solution.");
-    return 0;
+    return code;
 }
 
 int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
@@ -40,68 +48,190 @@ int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::v
     return remove_2vCut_containing_s(REMOVE_S, g, s, t, path1_back_it, path2_back_it);
 }
 
-bool st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old)
+int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old)
 {
     int n = g.vertexnum();
+    std::vector<int> nr(n, 0);                  // dfs number
+    std::vector<int> p(n, 0);                   // dfs parent
+    std::vector<int> lowpt(n, 0);               // low point
+    std::set<std::pair<int, int>> edge_visited; // mark edge visited
+    std::vector<int> next_neighbor_idx(n, 0);   // mark the next neighbor idx to visit for each vertex
+    int i = 1;                                  // current dfs number to assign
+    int v = s;                                  // current vertex
+    nr[s] = i;
+    lowpt[s] = i;
+    int w;
 
-    std::vector<int> num(n), low(n), art(n), stk;
-    std::vector<int> comp;
-    bool contain_s, contain_t;
-    std::function<bool(int, int, int &)> dfs = [&](int u, int p, int &dfs_number)
+    std::vector<int> S = {s}; // stack of vertex
+    bool contain_t_flag = 0;  // top componet at stack S contains t
+    int s_degree = g.get_degree(s);
+    // while (p[v] || next_neighbor_idx[s] < s_degree)
+    // while (p[v] || next_neighbor_idx[s] < s_degree || next_neighbor_idx[v] < g.get_degree(v))
+    // while (next_neighbor_idx[v] < g.get_degree(v))
+    while ((v == s && next_neighbor_idx[v] >= g.get_degree(v)) == 0)
     {
-        num[u] = low[u] = ++dfs_number;
-        stk.push_back(u); //好像爆栈了，这个要不放全局区，函数栈帧可能不够
-
-        for (int v : g.get_neighbors(u))
+#if TIME_KILL_ENABLE == 1
+        auto end = std::chrono::system_clock::now();
+        std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - ctrl_start);
+        double d = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
+        if (d > MAX_KILL_DURATION)
         {
-            if (v != p)
+            return TIME_EXCEED_RESULT;
+        }
+#endif //#if TIME_KILL_ENABLE==1
+       // deep into until need to backtrack(i.e. when there is no unvisied edge for v)
+        while (next_neighbor_idx[v] < g.get_degree(v))
+        {
+            // std::cout << v << std::endl;
+            w = g.get_neighbors(v)[next_neighbor_idx[v]];
+            ++next_neighbor_idx[v];
+            // vw is tree edge
+            if (nr[w] == 0)
             {
-                if (!num[v])
+                p[w] = v;
+                ++i;
+                nr[w] = i;
+                lowpt[w] = i;
+                // add to current component
+                S.push_back(w);
+                if (w == t)
                 {
-                    if (dfs(v, u, dfs_number))
-                    {
-                        return 1;
-                    }
-                    low[u] = std::min(low[u], low[v]);
-
-                    if (low[v] >= num[u])
-                    {
-                        art[u] = (num[u] > 1 || num[v] > 2);
-                        comp.clear();
-                        comp.push_back(u);
-                        contain_s = (u == s);
-                        contain_t = (u == t);
-                        while (comp.back() != v)
-                        {
-                            int tmpv = stk.back();
-                            if (tmpv == s)
-                            {
-                                contain_s = 1;
-                            }
-                            if (tmpv == t)
-                            {
-                                contain_t = 1;
-                            }
-                            comp.push_back(tmpv);
-                            stk.pop_back();
-                        }
-                        if (contain_s && contain_t)
-                        {
-                            write_graph(g, s, t, new2old, comp);
-                            return 1;
-                        }
-                    }
+                    contain_t_flag = 1;
                 }
-                else
-                    low[u] = std::min(low[u], num[v]);
+                v = w;
+            }
+            // vw is back edge(fond) //note that w == p[v] also falls out of nr[w] == 0
+            else if (w != p[v])
+            {
+                lowpt[v] = std::min(lowpt[v], nr[w]);
+            }
+#if DEBUG_LEVEL <= TRACE
+            print_vectorln(S);
+#endif
+        }
+        // v here can never be s: if then p[v]==0 && next_neighbor_idx[s] >= s_degree, which violate the condition of while(think of the case when entering the outer while v==s, v must advance and can not be s here)
+        // backtrack
+        // std::cout << "backtrack " << v << std::endl;
+        if (v == s)
+        {
+            continue;
+        }
+        if (p[v] != s)
+        {
+            // p[v] is not cut point
+            if (lowpt[v] < nr[p[v]])
+            {
+                // update lowpt[pv] with lowpt[v]
+                lowpt[p[v]] = std::min(lowpt[p[v]], lowpt[v]);
+            }
+            // p[v] is cut point
+            else
+            {
+                // pop back top component(stack S down to v(v included), plus p[v])
+                /*s and t may contain in separate block and the same time in the same block!
+                (consider DFiso_eg 1 and 7, 7 in (0 2 4...)(not containing 1) as well as (1 7 8 10)(containing 1))
+                thus, can not terminate early
+                if (v != s && contain_t_flag) return 0;*/
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+                while (S.back() != v)
+                {
+                    S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+                    print_vectorln(S);
+#endif
+                }
+                S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+                // contain_t_flag: top component containing t is poped, so clear flag
+                // wrong: after poping top comp, the new top comp may also contain t too!(when t is a cut point between these 2 comp)
+                // need to check too:
+                // find t is in S or not, if not then clear flag
+                if (contain_t_flag && std::find(S.begin(), S.end(), t) == S.end())
+                {
+                    contain_t_flag = 0;
+                }
             }
         }
-        return 0;
-    };
-
-    int dfs_number = 0;
-    return dfs(s, -1, dfs_number);
+        // p[v]==s
+        else
+        {
+#if DEBUG_LEVEL <= TRACE
+            print_vectorln(S);
+#endif
+            // each component contains s
+            // pop back top component(stack S down to v(v included), plus p[v])
+            // found block(s), vertex in stack is V(block(s))
+            if (contain_t_flag)
+            {
+                write_graph(g, s, t, new2old, S);
+#if DEBUG_LEVEL <= TRACE
+                print_with_colorln(BLUE, "vid\tlowpt:");
+                for (int i = 0; i < n; ++i)
+                {
+                    std::cout << i << "\t" << lowpt[i] << std::endl;
+                }
+                print_with_colorln(BLUE, "vid\tdfsnumber:");
+                for (int i = 0; i < n; ++i)
+                {
+                    std::cout << i << "\t" << nr[i] << std::endl;
+                }
+                print_with_colorln(BLUE, "vid\tpar:");
+                for (int i = 0; i < n; ++i)
+                {
+                    std::cout << i << "\t" << p[i] << std::endl;
+                }
+#endif //#if DEBUG_LEVEL <= TRACE
+                return 1;
+            }
+            while (S.back() != v)
+            {
+                S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+            }
+            S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+            print_vectorln(S);
+#endif
+            if (contain_t_flag && std::find(S.begin(), S.end(), t) == S.end())
+            {
+                contain_t_flag = 0;
+            }
+        }
+        v = p[v];
+        /*
+        while (next_neighbor_idx[v] >= g.get_degree(v) && v != s)
+        {
+            lowpt[p[v]] = std::min(lowpt[p[v]], lowpt[v]);
+            v = p[v];
+        }
+        */
+    }
+#if DEBUG_LEVEL <= TRACE
+    print_with_colorln(BLUE, "vid\tlowpt:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << lowpt[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tdfsnumber:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << nr[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tpar:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << p[i] << std::endl;
+    }
+#endif //#if DEBUG_LEVEL <= TRACE
+    return 0;
 }
+// remove_2vCut_containing_s 注意st交替调用怎么重组路径
 int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
 {
 #if TIME_KILL_ENABLE == 1
@@ -124,7 +254,15 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
     std::vector<std::set<int>> comps_V;                    // comp number->comps vertex set
     std::vector<std::vector<int>> s_adj_comp;              // idx correspond to s_neighbors: which comp(s) is s_neighbors[i] in(note that if s_neighbors[i] is cutpoint, more than 1 located comp; else 1 located comp)
     std::unordered_map<int, std::vector<int>> comp2s_nbrs; // if one comp contains one s_neighbors, record it
-    bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
+    bool t_is_cut_point;
+    int code = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
+#if TIME_KILL_ENABLE == 1
+    if (code == TIME_EXCEED_RESULT)
+    {
+        return TIME_EXCEED_RESULT;
+    }
+#endif //#if TIME_KILL_ENABLE == 1
+    t_is_cut_point = code;
 #if DEBUG_LEVEL <= TRACE
     print_with_colorln(BLUE, "t_is_cut_point:" + std::to_string(t_is_cut_point));
     print_bctree_vector(bctree);
@@ -507,20 +645,19 @@ inline void insert_v_into_comp(std::vector<std::set<int>> &comps_V, std::vector<
 }
 // insert "parent cut point" v into comp k
 //  update comps_V, s_adj_comp
-inline void insert_parentcutv_into_comp(std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, int v, std::unordered_map<int, int> &snbrs2idx)
+inline void insert_parentcutv_into_comp(std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, int k, int v, std::unordered_map<int, int> &snbrs2idx)
 {
-    comps_V.push_back({v});
+    comps_V[k].insert(v);
     // if v is snbr
     // record v's located comp(i.e. comp k) to snbr
     if (snbrs2idx.count(v))
     {
-        s_adj_comp[snbrs2idx[v]].push_back(comps_V.size() - 1);
+        s_adj_comp[snbrs2idx[v]].push_back(k);
     }
 }
 
-bool build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp)
+int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp)
 {
-    int n = g.vertexnum();
     std::unordered_map<int, int> snbrs2idx; // to idx in s_neighbors
     for (size_t i = 0; i < s_neighbors.size(); ++i)
     {
@@ -532,68 +669,186 @@ bool build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vect
         vec.clear();
     }
     bool t_is_cut_point = 0;
-    std::vector<int> num(n), low(n), art(n), stk;
-    std::vector<std::vector<int>> comps;
 
+    int n = g.vertexnum();
+    std::vector<int> nr(n, 0);                  // dfs number
+    std::vector<int> p(n, 0);                   // dfs parent
+    std::vector<int> lowpt(n, 0);               // low point
+    std::set<std::pair<int, int>> edge_visited; // mark edge visited
+    std::vector<int> next_neighbor_idx(n, 0);   // mark the next neighbor idx to visit for each vertex
+    int i = 1;                                  // current dfs number to assign
+    int k = 0;                                  // current comp number
+    int v = t;                                  // current vertex
+    nr[v] = i;
+    lowpt[v] = i;
+    int w;
     std::unordered_map<int, std::vector<int>> cutpoint2comp; // bctreeNode(.second[i]).cut_point is .first
     // all comps that hanging at each cutpoint. used for determine parent comp for bctree
     std::set<int> t_comps;
-    int k = 0;
 
-    std::function<void(int, int, int &)> dfs = [&](int u, int p, int &dfs_number)
+    std::vector<int> S = {v}; // stack of vertex
+    int t_degree = g.get_degree(t);
+    // while (p[v] || next_neighbor_idx[t] < t_degree)
+    // while (next_neighbor_idx[v] < g.get_degree(v))
+    while ((v == t && next_neighbor_idx[v] >= g.get_degree(v)) == 0)
     {
-        num[u] = low[u] = ++dfs_number;
-        stk.push_back(u);
-
-        for (int v : g.get_neighbors(u))
-            if (v != p)
+#if TIME_KILL_ENABLE == 1
+        auto end = std::chrono::system_clock::now();
+        std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - ctrl_start);
+        double d = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
+        if (d > MAX_KILL_DURATION)
+        {
+            return TIME_EXCEED_RESULT;
+        }
+#endif //#if TIME_KILL_ENABLE==1
+       // deep into until need to backtrack(i.e. when there is no unvisied edge for v)
+        while (next_neighbor_idx[v] < g.get_degree(v))
+        {
+            w = g.get_neighbors(v)[next_neighbor_idx[v]];
+            ++next_neighbor_idx[v];
+            // vw is tree edge
+            if (nr[w] == 0)
             {
-                if (!num[v])
-                {
-                    dfs(v, u, dfs_number);
-                    low[u] = std::min(low[u], low[v]);
-
-                    if (low[v] >= num[u])
-                    {
-                        art[u] = (num[u] > 1 || num[v] > 2);
-
-                        // comps.push_back({u});
-                        // comps_V.push_back({u});
-                        insert_parentcutv_into_comp(comps_V, s_adj_comp, u, snbrs2idx);
-                        while (stk.back() != v)
-                        {
-                            int tmpv = stk.back();
-                            insert_v_into_comp(comps_V, s_adj_comp, bctree, k, tmpv, snbrs2idx, cutpoint2comp);
-                            // comps.back().push_back(tmpv);
-                            comps_V.back().insert(tmpv);
-                            stk.pop_back();
-                        }
-                        insert_v_into_comp(comps_V, s_adj_comp, bctree, k, v, snbrs2idx, cutpoint2comp);
-                        // comps.back().push_back(v);
-                        comps_V.back().insert(v);
-                        stk.pop_back();
-
-                        bctree.emplace_back(u); // comp k's cut point is u
-                        cutpoint2comp[u].push_back(k);
-                        ++k;
-                    }
-                }
-                else
-                    low[u] = std::min(low[u], num[v]);
+                p[w] = v;
+                ++i;
+                nr[w] = i;
+                lowpt[w] = i;
+                // add to current component
+                S.push_back(w);
+                v = w;
             }
-    };
+            // vw is back edge(fond)
+            else if (w != p[v])
+            {
+                lowpt[v] = std::min(lowpt[v], nr[w]);
+            }
+#if DEBUG_LEVEL <= TRACE
+            print_vectorln(S);
+#endif
+        }
+        // v here can never be s: if then p[v]==0 && next_neighbor_idx[s] >= s_degree, which violate the condition of while(think of the case when entering the outer while v==s, v must advance and can not be s here)
+        // backtrack
+        if (v == t)
+        {
+            continue;
+        }
+        if (p[v] != t)
+        {
+            // p[v] is not cut point
+            if (lowpt[v] < nr[p[v]])
+            {
+                // update lowpt[pv] with lowpt[v]
+                lowpt[p[v]] = std::min(lowpt[p[v]], lowpt[v]);
+            }
+            // p[v] is cut point
+            else
+            {
+                // pop back top component(stack S down to v(v included), plus p[v])
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+                comps_V.resize(k + 1);
+                while (S.back() != v)
+                {
+                    int tmpv = S.back();
+                    insert_v_into_comp(comps_V, s_adj_comp, bctree, k, tmpv, snbrs2idx, cutpoint2comp);
+                    S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+                    print_vectorln(S);
+#endif
+                }
+                insert_v_into_comp(comps_V, s_adj_comp, bctree, k, v, snbrs2idx, cutpoint2comp);
+                S.pop_back();
+                insert_parentcutv_into_comp(comps_V, s_adj_comp, k, p[v], snbrs2idx);
+#if DEBUG_LEVEL <= TRACE
+                print_comps_V(comps_V);
+                std::cout << std::endl;
+#endif
+                bctree.emplace_back(p[v]); // comp k's cut point is p[v]
+                cutpoint2comp[p[v]].push_back(k);
+                ++k;
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+            }
+        }
+        // p[v]==t
+        else
+        {
+#if DEBUG_LEVEL <= TRACE
+            print_vectorln(S);
+#endif
+            // each component contains t
+            // pop back top component(stack S down to v(v included), plus p[v])
 
-    int dfs_num = 0;
-    dfs(t, -1, dfs_num);
-    if (art[t])
+            // when t is cut point: think of case: all vertices has been visited, but there is still edge for t to visit, then the travel will go through those edge and backtrack instantly,
+            // when backtrack from those neighbors, control will reach here, there is definitely no more comps, but if we don't set the condition here, we would go for create another comp!
+            if (std::find(S.begin(), S.end(), v) != S.end())
+            // if (next_neighbor_idx[t] < g.get_degree(t))
+            {
+                t_comps.insert(k);
+                comps_V.resize(k + 1);
+                while (S.back() != v)
+                {
+                    int tmpv = S.back();
+                    insert_v_into_comp(comps_V, s_adj_comp, bctree, k, tmpv, snbrs2idx, cutpoint2comp);
+                    S.pop_back();
+#if DEBUG_LEVEL <= TRACE
+                    print_vectorln(S);
+#endif
+                }
+                insert_v_into_comp(comps_V, s_adj_comp, bctree, k, v, snbrs2idx, cutpoint2comp);
+                S.pop_back();
+                insert_parentcutv_into_comp(comps_V, s_adj_comp, k, t, snbrs2idx);
+#if DEBUG_LEVEL <= TRACE
+                print_comps_V(comps_V);
+                std::cout << std::endl;
+#endif
+                bctree.emplace_back(p[v]); // comp k's cut point is p[v]
+                cutpoint2comp[p[v]].push_back(k);
+                ++k;
+#if DEBUG_LEVEL <= TRACE
+                print_vectorln(S);
+#endif
+            }
+        }
+        v = p[v];
+        /*
+        while (next_neighbor_idx[v] >= g.get_degree(v) && v != t)
+        {
+            lowpt[p[v]] = std::min(lowpt[p[v]], lowpt[v]);
+            v = p[v];
+        }
+        */
+    }
+    t_is_cut_point = (t_comps.size() > 1);
+    if (t_is_cut_point)
     {
         t_comp = -1;
     }
     else
     {
-        t_comp = k - 1;
+        t_comp = k - 1; // the last comp is block(t)
     }
-    return art[t];
+    comps_V.resize(k);
+#if DEBUG_LEVEL <= TRACE
+    print_with_colorln(BLUE, "vid\tlowpt:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << lowpt[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tdfsnumber:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << nr[i] << std::endl;
+    }
+    print_with_colorln(BLUE, "vid\tpar:");
+    for (int i = 0; i < n; ++i)
+    {
+        std::cout << i << "\t" << p[i] << std::endl;
+    }
+#endif //#if DEBUG_LEVEL <= TRACE
+    return t_is_cut_point;
 }
 #if DEBUG_LEVEL <= DEBUG
 void print_bctree_vector(const std::vector<bctreeNode> &bctree)
