@@ -2,10 +2,12 @@
 #define _CONFIG_H
 
 #define ENABLE_PROCESS_RECORD // enable record processed st_pairs
-// max kill duration in s: 5min//30min
 #define TIME_KILL_ENABLE 1
-#define MAX_KILL_DURATION 300
-#define TIME_EXCEED_RESULT 2
+#define TIME_EXCEED_RESULT -1
+
+// baseline: depth limit when searching path1
+#define DEPTH_KILL_ENABLE 1
+#define DEPTH_LIMIT_EXCEED_RESULT 3
 
 // debug output level
 #define DEBUG_LEVEL 2 // output all higher and equal

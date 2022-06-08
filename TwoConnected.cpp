@@ -1,6 +1,6 @@
 #include "TwoConnected.h"
 #if TIME_KILL_ENABLE == 1
-extern std::chrono::_V2::system_clock::time_point ctrl_start;
+extern bool is_time_out;
 #endif //#if TIME_KILL_ENABLE == 1
 int solve_2VDPP(Graph &g, int s, int t)
 {
@@ -10,9 +10,6 @@ int solve_2VDPP(Graph &g, int s, int t)
 #if DEBUG_LEVEL <= DEBUG
     print_with_colorln(DARK_YELLOW, "reduction: to b(s,t)");
 #endif //#if DEBUG_LEVEL <= DEBUG
-#if TIME_KILL_ENABLE == 1
-    ctrl_start = std::chrono::system_clock::now();
-#endif //#if TIME_KILL_ENABLE==1
     int code = st_biconnected_component(g, s, t, new2old);
     if (code == 1)
     {
@@ -25,9 +22,9 @@ int solve_2VDPP(Graph &g, int s, int t)
             map_new2old(0, p1, path1_back_it, new2old);
             map_new2old(0, p2, path2_back_it, new2old);
 
-            print_with_color(RED, "path1: ");
+            print_with_color(BLUE, "path1: ");
             print_vectorln(path1);
-            print_with_color(RED, "path2: ");
+            print_with_color(BLUE, "path2: ");
             print_vectorln(path2);
             return code;
         }
@@ -35,11 +32,11 @@ int solve_2VDPP(Graph &g, int s, int t)
 #if TIME_KILL_ENABLE == 1
     if (code == TIME_EXCEED_RESULT)
     {
-        print_with_colorln(RED, "time limit exceed.");
+        print_with_colorln(BLUE, "time limit exceed.");
         return code;
     }
-#endif //#if TIME_KILL_ENABLE==1
-    print_with_colorln(RED, "no solution.");
+#endif //#if TIME_KILL_ENABLE == 1
+    print_with_colorln(BLUE, "no solution.");
     return code;
 }
 
@@ -64,21 +61,15 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
 
     std::vector<int> S = {s}; // stack of vertex
     bool contain_t_flag = 0;  // top componet at stack S contains t
-    int s_degree = g.get_degree(s);
     // while (p[v] || next_neighbor_idx[s] < s_degree)
     // while (p[v] || next_neighbor_idx[s] < s_degree || next_neighbor_idx[v] < g.get_degree(v))
     // while (next_neighbor_idx[v] < g.get_degree(v))
     while ((v == s && next_neighbor_idx[v] >= g.get_degree(v)) == 0)
     {
 #if TIME_KILL_ENABLE == 1
-        auto end = std::chrono::system_clock::now();
-        std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - ctrl_start);
-        double d = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-        if (d > MAX_KILL_DURATION)
-        {
+        if (is_time_out)
             return TIME_EXCEED_RESULT;
-        }
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
        // deep into until need to backtrack(i.e. when there is no unvisied edge for v)
         while (next_neighbor_idx[v] < g.get_degree(v))
         {
@@ -235,14 +226,9 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
 int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
 {
 #if TIME_KILL_ENABLE == 1
-    auto end = std::chrono::system_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - ctrl_start);
-    double d = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-    if (d > MAX_KILL_DURATION)
-    {
+    if (is_time_out)
         return TIME_EXCEED_RESULT;
-    }
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
     /*remove 2-vertex-cut containing s*/
     std::vector<int> s_neighbors = g.delete_vertex(s);
 #if DEBUG_LEVEL <= TRACE
@@ -257,10 +243,8 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
     bool t_is_cut_point;
     int code = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
 #if TIME_KILL_ENABLE == 1
-    if (code == TIME_EXCEED_RESULT)
-    {
+    if (is_time_out)
         return TIME_EXCEED_RESULT;
-    }
 #endif //#if TIME_KILL_ENABLE == 1
     t_is_cut_point = code;
 #if DEBUG_LEVEL <= TRACE
@@ -346,9 +330,9 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                     else
                         code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
 #if TIME_KILL_ENABLE == 1
-                    if (code == TIME_EXCEED_RESULT)
+                    if (is_time_out)
                         return TIME_EXCEED_RESULT;
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
                     if (code)
                     {
 #if DEBUG_LEVEL <= TRACE
@@ -408,10 +392,11 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                         code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
                     else
                         code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
+
 #if TIME_KILL_ENABLE == 1
-                    if (code == TIME_EXCEED_RESULT)
+                    if (is_time_out)
                         return TIME_EXCEED_RESULT;
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
                     if (code)
                     {
 #if DEBUG_LEVEL <= TRACE
@@ -508,10 +493,11 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                     code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
                 else
                     code = remove_2vCut_containing_s(REMOVE_S, g, t, s, p1_back_it, p2_back_it);
+
 #if TIME_KILL_ENABLE == 1
-                if (code == TIME_EXCEED_RESULT)
+                if (is_time_out)
                     return TIME_EXCEED_RESULT;
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
                 if (code)
                 {
 #if DEBUG_LEVEL <= TRACE
@@ -687,20 +673,14 @@ int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vecto
     std::set<int> t_comps;
 
     std::vector<int> S = {v}; // stack of vertex
-    int t_degree = g.get_degree(t);
     // while (p[v] || next_neighbor_idx[t] < t_degree)
     // while (next_neighbor_idx[v] < g.get_degree(v))
     while ((v == t && next_neighbor_idx[v] >= g.get_degree(v)) == 0)
     {
 #if TIME_KILL_ENABLE == 1
-        auto end = std::chrono::system_clock::now();
-        std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - ctrl_start);
-        double d = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
-        if (d > MAX_KILL_DURATION)
-        {
+        if (is_time_out)
             return TIME_EXCEED_RESULT;
-        }
-#endif //#if TIME_KILL_ENABLE==1
+#endif //#if TIME_KILL_ENABLE == 1
        // deep into until need to backtrack(i.e. when there is no unvisied edge for v)
         while (next_neighbor_idx[v] < g.get_degree(v))
         {
@@ -891,7 +871,7 @@ void print_s_adj_comp(const std::vector<std::vector<int>> &s_adj_comp, const std
 
 int get_root_comp(int comp, const std::vector<bctreeNode> &bctree, int t_comp)
 {
-    assert(comp >= 0 && comp < bctree.size());
+    assert(comp >= 0 && comp < (int)bctree.size());
     int c = comp;
     while (bctree[c].parent != t_comp && bctree[c].parent != -1)
     // t_comp might not be -1. in this case, when bctree[c].parent == -1, we should stop(otherwise next while loop will do bctree[-1])

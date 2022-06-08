@@ -31,7 +31,7 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
 /*return:
     1:solved
     0:no solution
-    2(TIME_EXCEED_RESULT): time limit exceed*/
+    -1(TIME_EXCEED_RESULT): time limit exceed*/
 enum Remove2VCutSel
 {
     REMOVE_S, // return path s->t
@@ -98,7 +98,7 @@ void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bc
 // WARN!!未实现 未测试
 /*remove all 2-vertex-cut in g
 given g: 2connected, any 2-vertex-cut excludes s or t
-return: 1:solved 0:no solution 2(TIME_EXCEED_RESULT): time limit exceed*/
+return: 1:solved 0:no solution -1(TIME_EXCEED_RESULT): time limit exceed*/
 int remove_2vCut(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
 
 #endif //_TWOCONNECTED_H

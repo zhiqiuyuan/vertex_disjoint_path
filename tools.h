@@ -15,7 +15,10 @@
 #include <chrono>
 #include <ctime>
 #include <functional>
+#include <future>
+#include <thread>
 #include <assert.h>
+#include <pthread.h>
 
 #include "config.h"
 

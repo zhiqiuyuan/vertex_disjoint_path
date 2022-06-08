@@ -3,7 +3,7 @@
 #include "TwoConnected.h"
 
 #if TIME_KILL_ENABLE == 1
-std::chrono::_V2::system_clock::time_point ctrl_start;
+bool is_time_out;
 #endif //#if TIME_KILL_ENABLE == 1
 
 #if DEBUG_LEVEL <= TRACE

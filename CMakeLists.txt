@@ -1,12 +1,10 @@
 cmake_minimum_required( VERSION 2.8 )
 project(disjoint_path)
 
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-
-set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_C_FLAGS_DEBUG "$ENV{CXXFLAGS} -Wall -g -rdynamic")
-set(CMAKE_C_FLAGS_RELEASE "$ENV{CXXFLAGS} -Wall")
 set(CMAKE_CXX_STANDARD 11)
+
+set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -std=c++11 -g -Wall -rdynamic -pthread")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -48,6 +46,8 @@ set(MAIN_FILE_LIST
     main.cpp
     TwoConnected.cpp
     TwoConnected.h
+    BiBFSBaseline.cpp
+    BiBFSBaseline.h
     BoostTools.h
     BoostTools.cpp
     Graph.cpp

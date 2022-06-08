@@ -16,7 +16,6 @@ bool TVEGraph::buildGraph(std::string fname)
     vertex_num = vertexNum;
     neighbors.resize(vertex_num);
 
-    int id, label, degree;
     std::string no_use;
     std::getline(fin, no_use); // t vnum enum line
     for (int i = 0; i < vertexNum; ++i)

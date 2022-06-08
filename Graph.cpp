@@ -4,7 +4,8 @@ void Graph::generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &s
 {
     int n = neighbors.size();
     int s, t;
-    while (st_pairs.size() < pairs_cnt)
+    size_t pre_sz = 0;
+    while (st_pairs.size() < (size_t)pairs_cnt)
     {
         s = Rand(n);
         t = Rand(n);
@@ -19,6 +20,11 @@ void Graph::generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &s
             t = tmp;
         }
         st_pairs.insert(std::pair<int, int>(s, t));
+        if (st_pairs.size() != pre_sz)
+        {
+            std::cout << "\tst_pairs.size():" << st_pairs.size() << std::endl;
+        }
+        pre_sz = st_pairs.size();
     }
 }
 void Graph::print_graph()

@@ -1,13 +1,17 @@
 #include "tools.h"
 #include "DataSetGraph.h"
 #include "TwoConnected.h"
+#include "BiBFSBaseline.h"
 
 /* 命令行参数
+ * -m method (baseline, bestbound, idea)
  * -g graph_file
  * -p vertex_pair_file
  * -o output_dir
  * [-c pairs_count](default: total vertex_pair_file) //st_pair_set.size()
  * [-r round, repeat_times](default: 1) //(for time measuring) for a fixed st_pair set, repeat how many times
+ * [-d side_depth](for baseline; default: LLONG_MAX)
+ * [-t time_limit](default: 300)
  */
 void printUsage()
 {
@@ -17,7 +21,7 @@ void printUsage()
 }
 
 #if TIME_KILL_ENABLE == 1
-std::chrono::_V2::system_clock::time_point ctrl_start;
+bool is_time_out;
 #endif //#if TIME_KILL_ENABLE == 1
 
 int main(int argc, char **argv)
@@ -25,8 +29,8 @@ int main(int argc, char **argv)
     TVEGraph g, g_copy;
     // EGraph g, g_copy;
 
-    std::string gfname, vfname, outfname;
-    if (argc < 5)
+    std::string gfname, vfname, outfname, method;
+    if (argc < 7)
     {
         printUsage();
         return -1;
@@ -39,6 +43,7 @@ int main(int argc, char **argv)
     gfname = cmd["-g"];
     vfname = cmd["-p"];
     outfname = cmd["-o"];
+    method = cmd["-m"];
     if (outfname.empty() == 0 && outfname[outfname.size() - 1] != '/')
     {
         outfname += '/';
@@ -64,6 +69,27 @@ int main(int argc, char **argv)
         }
     }
 
+    int time_limit_sec = 300;
+    if (cmd.count("-t"))
+    {
+        time_limit_sec = std::stoi(cmd["-t"]);
+        if (time_limit_sec <= 0)
+        {
+            time_limit_sec = 300;
+        }
+    }
+
+    // for baseline
+    long long side_depth = LLONG_MAX;
+    if (cmd.count("-d"))
+    {
+        side_depth = std::stoi(cmd["-d"]);
+        if (side_depth <= 0)
+        {
+            side_depth = LLONG_MAX;
+        }
+    }
+
     print_with_colorln(GREEN, "loading graph...");
     if (g.buildGraph(gfname) == 0)
     {
@@ -76,10 +102,23 @@ int main(int argc, char **argv)
     std::vector<std::pair<int, int>> st_pairs;
     std::ifstream fin(vfname);
     int s, t;
+    ///*
     for (int i = 0; ((i < pairs_cnt) || (pairs_cnt == -1)) && fin >> s >> t; ++i)
     {
         st_pairs.emplace_back(s, t);
     }
+    //*/
+
+    /*
+    for (int i = 0; i < 10; ++i)
+    {
+        for (int j = i + 1; j < 10; ++j)
+        {
+            st_pairs.emplace_back(i, j);
+        }
+    }
+    */
+
     int cnt = 0, scnt = 0, tcnt = 0; // for average computing
     double average_d = 0;            // unit: second
     double average_success_cnt = 0, average_time_exceeding_cnt = 0;
@@ -107,17 +146,76 @@ int main(int argc, char **argv)
 #ifdef ENABLE_PROCESS_RECORD
             pair_record_fout << s << " " << t << std::endl;
 #endif // ENABLE_PROCESS_RECORD
-            result = solve_2VDPP(g, s, t);
+            start = std::chrono::system_clock::now();
+#if TIME_KILL_ENABLE == 1
+            is_time_out = 0;
+            std::future<int> future;
+            if (method == "bestbound")
+            {
+                future = std::async(std::launch::async, [&g, s, t]()
+                                    { return solve_2VDPP(g, s, t); });
+            }
+            else if (method == "baseline")
+            {
+                future = std::async(std::launch::async, [&g, side_depth, s, t, i, repeat_times]()
+                                    { return baseline(g, side_depth, s, t, i == repeat_times); });
+            }
+            else
+            {
+                print_with_colorln(RED, "not supported method type: " + method);
+                return -1;
+            }
+            // Waits for the result to become available.
+            // Blocks until specified timeout_duration has elapsed or the result becomes available, whichever comes first.
+            // The return value identifies the state of the result.
+            // WARN: the thread won't be killed after timeout!
+            std::future_status status;
+            do
+            {
+                status = future.wait_for(std::chrono::seconds(time_limit_sec));
+                if (status == std::future_status::timeout)
+                {
+                    is_time_out = 1; // this would trigger test point return earlier
+                }
+                else if (status == std::future_status::deferred)
+                {
+                    print_with_colorln(RED, "deferred");
+                    return -1;
+                }
+            } while (status != std::future_status::ready);
+            if (is_time_out == 0)
+            {
+                result = future.get();
+                success_cnt += (result == 1);
+            }
+            else
+            {
+                ++time_exceeding_cnt;
+            }
+#else  //#if TIME_KILL_ENABLE == 1
+            if (method == "bestbound")
+            {
+                result = solve_2VDPP(g, s, t);
+            }
+            else if (method == "baseline")
+            {
+                result = baseline(g, side_depth, s, t, i == repeat_times);
+            }
+            else
+            {
+                print_with_colorln(RED, "not supported method type: " + method);
+                return -1;
+            }
             success_cnt += (result == 1);
-            time_exceeding_cnt += (result == TIME_EXCEED_RESULT);
+#endif //#if TIME_KILL_ENABLE == 1
 
             // exclude g recover(through copy) time
             auto end = std::chrono::system_clock::now();
             std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
             dd = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
             d += dd;
-            g = g_copy;
-            start = std::chrono::system_clock::now();
+            if (method == "bestbound")
+                g = g_copy;
         }
         moving_average(average_d, d, cnt);
         std::cout << "\ttime:" << d / (st_pairs.size()) << std::endl;

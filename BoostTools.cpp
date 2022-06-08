@@ -29,7 +29,7 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
 {
     boost::edge_component_t edge_component;
     boost::property_map<graph_t, boost::edge_component_t>::type component = get(edge_component, g);
-    std::size_t num_comps = biconnected_components(g, component);
+    int num_comps = biconnected_components(g, component);
     if (print_comp_detail)
         print_with_colorln(BLUE, "boost num_comps:" + std::to_string(num_comps));
     boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
@@ -71,7 +71,7 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
         print_with_color(BLUE, "t in comps: ");
         print_setln(tnumv);
     }
-    int snum = -1, tnum = -1;
+    int snum = -1;
     for (int sn : snumv)
     {
         if (tnumv.count(sn))
@@ -92,7 +92,7 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     std::set<int> old; // vertices
     for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
     {
-        if (component[*ei] == snum)
+        if ((int)component[*ei] == snum)
         {
             es = source(*ei, g);
             et = target(*ei, g);
