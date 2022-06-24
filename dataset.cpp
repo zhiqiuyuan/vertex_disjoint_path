@@ -21,14 +21,12 @@ int main(int argc, char **argv)
     EGraph g;
     std::cout << gfname << std::endl;
     print_with_colorln(GREEN, "loading graph...");
-    //加载图要很长时间
-    //另外，128G的内存，100亿的边加载全图到内存不合理，改成rocksdb
     if (g.buildGraph(gfname) == 0)
     {
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
-    std::set<std::pair<int, int>> st_pairs;
+    std::set<std::pair<VID_TYPE, VID_TYPE>> st_pairs;
     long long n = g.vertexnum();
     long long pairs_upper = n * (n - 1) / 2;
     if (pairs_cnt > pairs_upper)

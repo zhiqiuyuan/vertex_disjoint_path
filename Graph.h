@@ -2,80 +2,41 @@
 #define _GRAPH_H
 
 #include "tools.h"
-
 // v in file are vid
 // vid are [0,vertex_num)
+// no parallel edge
 class Graph
 {
 protected:
-    std::vector<std::vector<int>> neighbors;
-    int vertex_num;
+    VID_TYPE vertex_num;
 
 public:
     Graph() : vertex_num(0) {}
-    int vertexnum() { return vertex_num; }
-    int add_vertex()
-    {
-        ++vertex_num;
-        neighbors.push_back({});
-        return vertex_num;
-    }
-    void add_edge(int s, int t)
-    {
-        assert(s >= 0 && s < vertex_num && t >= 0 && t < vertex_num);
-        neighbors[s].push_back(t);
-        neighbors[t].push_back(s);
-    }
-    int get_degree(int vid)
-    {
-        assert(vid >= 0 && vid < vertex_num);
-        return neighbors[vid].size();
-    }
-    std::vector<int> &get_neighbors(int vid)
-    {
-        assert(vid >= 0 && vid < vertex_num);
-        return neighbors[vid];
-    }
-    void set_neighbors(int vid, std::vector<int> new_ns)
-    {
-        assert(vid >= 0 && vid < vertex_num);
-        neighbors[vid] = new_ns;
-    }
-    // return neighbors[vid] and another side entry
-    // NOTE: won't modify vertex_num!! since all vertex id are not changed
+    VID_TYPE vertexnum() { return vertex_num; }
+    // return new vertex_num
+    virtual VID_TYPE add_vertex() = 0;
+    virtual void add_edge(VID_TYPE s, VID_TYPE t) = 0;
+    virtual std::vector<VID_TYPE> &get_neighbors(VID_TYPE vid) = 0;
+    virtual void set_neighbors(VID_TYPE vid, std::vector<VID_TYPE> new_ns) = 0;
+    virtual void set_all_neighbors(std::vector<std::vector<VID_TYPE>> &new_neighbors, VID_TYPE n) = 0;
+    // return neighbors[vid]
+    // NOTE: won't update vertex_num!! since all vertex id are not changed
     // NOTE: adjacent list for undirected graph: 2 entry 1 link
-    std::vector<int> delete_vertex(int vid)
+    virtual std::vector<VID_TYPE> delete_vertex(VID_TYPE vid) = 0;
+    virtual void recover_vertex(VID_TYPE vid, const std::vector<VID_TYPE> &nbrs) = 0;
+
+    VID_TYPE get_degree(VID_TYPE vid)
     {
         assert(vid >= 0 && vid < vertex_num);
-        for (int i = 0; i < vertex_num; ++i)
-        {
-            std::vector<int> &nbrs = neighbors[i];
-            std::vector<int>::iterator it;
-            if ((it = std::find(nbrs.begin(), nbrs.end(), vid)) != nbrs.end())
-            {
-                nbrs.erase(it);
-            }
-        }
-        std::vector<int> tmp = neighbors[vid];
-        neighbors[vid].clear();
-        return tmp;
+        return get_neighbors(vid).size();
     }
-    void recover_vertex(int vid, const std::vector<int> &nbrs)
-    {
-        assert(vid >= 0 && vid < vertex_num);
-        neighbors[vid] = nbrs;
-        for (int v : nbrs)
-        {
-            neighbors[v].push_back(vid);
-        }
-    }
-    std::vector<int> intersect_neighbors(int s, int t)
+    std::vector<VID_TYPE> intersect_neighbors(VID_TYPE s, VID_TYPE t)
     {
         assert(s >= 0 && s < vertex_num && t >= 0 && t < vertex_num);
-        std::vector<int> nbrs1 = neighbors[s], nbrs2 = neighbors[t];
+        std::vector<VID_TYPE> nbrs1 = get_neighbors(s), nbrs2 = get_neighbors(t);
         std::sort(nbrs1.begin(), nbrs1.end());
         std::sort(nbrs2.begin(), nbrs2.end());
-        std::vector<int> re;
+        std::vector<VID_TYPE> re;
         int i1 = 0, i2 = 0;
         int e1 = nbrs1.size(), e2 = nbrs2.size();
         while (i1 < e1 && i2 < e2)
@@ -98,20 +59,106 @@ public:
         return re;
     }
     void print_graph();
-    void print_new2old_graph(const std::unordered_map<int, int> &new2old);
-    void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<int, int>> &st_pairs);
+    void print_new2old_graph(const std::unordered_map<VID_TYPE, VID_TYPE> &new2old);
+    void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<VID_TYPE, VID_TYPE>> &st_pairs);
 
-    // load total graph into std::vector<std::vector<int>> neighbors
+    // new g: vertex in V, all edges in g between V, remapping V->[0,|V|)
+    // return new2old mapping, return new st and new g
+    // new2old for translating path to the graph before reduction
+    virtual void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::vector<VID_TYPE> &V) = 0;
+    virtual void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::set<VID_TYPE> &V) = 0;
+
     // return build succeed or not
     virtual bool buildGraph(std::string fname) = 0;
-
-    friend void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old, const std::vector<int> &V);
 };
 
-// new g: vertex in V, all edges in g between V, remapping V->[0,|V|)
-// return new2old mapping, return new st and new g
-// new2old for translating path to the graph before reduction
-void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old, const std::vector<int> &V);
-void write_graph(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old, const std::set<int> &V);
+class MemGraph : public Graph
+{
+protected:
+    std::vector<std::vector<VID_TYPE>> neighbors;
+
+public:
+    MemGraph() {}
+    VID_TYPE add_vertex()
+    {
+        ++vertex_num;
+        neighbors.push_back({});
+        return vertex_num;
+    }
+    void add_edge(VID_TYPE s, VID_TYPE t)
+    {
+        assert(s >= 0 && t >= 0);
+        if (s >= vertex_num || t >= vertex_num)
+        {
+            vertex_num = std::max(s, t) + 1;
+            neighbors.resize(vertex_num, {});
+        }
+        neighbors[s].push_back(t);
+        neighbors[t].push_back(s);
+    }
+    VID_TYPE get_degree(VID_TYPE vid)
+    {
+        assert(vid >= 0 && vid < vertex_num);
+        return neighbors[vid].size();
+    }
+    std::vector<VID_TYPE> &get_neighbors(VID_TYPE vid)
+    {
+        assert(vid >= 0 && vid < vertex_num);
+        return neighbors[vid];
+    }
+    void set_neighbors(VID_TYPE vid, std::vector<VID_TYPE> new_ns)
+    {
+        assert(vid >= 0 && vid < vertex_num);
+        neighbors[vid] = new_ns;
+    }
+    void set_all_neighbors(std::vector<std::vector<VID_TYPE>> &new_neighbors, VID_TYPE n)
+    {
+        neighbors = new_neighbors;
+        vertex_num = n;
+    }
+    std::vector<VID_TYPE> delete_vertex(VID_TYPE vid)
+    {
+        assert(vid >= 0 && vid < vertex_num);
+        for (VID_TYPE i = 0; i < vertex_num; ++i)
+        {
+            std::vector<VID_TYPE> &nbrs = neighbors[i];
+            std::vector<VID_TYPE>::iterator it;
+            if ((it = std::find(nbrs.begin(), nbrs.end(), vid)) != nbrs.end())
+            {
+                nbrs.erase(it);
+            }
+        }
+        std::vector<VID_TYPE> tmp = neighbors[vid];
+        neighbors[vid].clear();
+        return tmp;
+    }
+    void recover_vertex(VID_TYPE vid, const std::vector<VID_TYPE> &nbrs)
+    {
+        assert(vid >= 0 && vid < vertex_num);
+        neighbors[vid] = nbrs;
+        for (VID_TYPE v : nbrs)
+        {
+            neighbors[v].push_back(vid);
+        }
+    }
+
+    // create new adjancent list representation in std::vector<std::vector<VID_TYPE>> new_neighbors then copy
+    void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::vector<VID_TYPE> &V);
+    void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::set<VID_TYPE> &V);
+
+    // load total graph into std::vector<std::vector<VID_TYPE>> neighbors
+    virtual bool buildGraph(std::string fname) = 0;
+};
+
+/*
+class DBGraph : public Graph
+{
+protected:
+    DbEngine *db;
+
+public:
+    DBGraph() {}
+};
+*/
 
 #endif //_GRAPH_H

@@ -33,7 +33,7 @@ BiBFSBaseline::~BiBFSBaseline()
     }
 }
 
-int BiBFSBaseline::bibfs(Graph &g, long long side_depth, int s, int t)
+int BiBFSBaseline::bibfs(Graph &g, long long side_depth, VID_TYPE s, VID_TYPE t)
 {
     src_side_max_depth = bfs(side_depth, g, s, src_v2visited);
     if (src_side_max_depth == TIME_EXCEED_RESULT)
@@ -60,7 +60,7 @@ int BiBFSBaseline::src_side_dfs(VisitedNode *start)
     if (is_time_out)
         return TIME_EXCEED_RESULT;
 #endif //#if TIME_KILL_ENABLE == 1
-    int startv = start->v;
+    VID_TYPE startv = start->v;
 
     //走到s了：搜索joint的tat_side(s不加入path1record)
     if (startv == sv)
@@ -169,7 +169,7 @@ int BiBFSBaseline::tat_side_dfs(VisitedNode *start)
     if (is_time_out)
         return TIME_EXCEED_RESULT;
 #endif //#if TIME_KILL_ENABLE == 1
-    int startv = start->v;
+    VID_TYPE startv = start->v;
 
     //走到t了：找到了一条path1(t不加入path1record)，为path1找path2
     if (startv == tv)
@@ -266,16 +266,18 @@ int BiBFSBaseline::find_path2()
     print_pathln(path1_vSeq, 1);
 #endif //#if DEBUG_LEVEL <= TRACE
     /*bibfs from s and t*/
-    std::set<int> s_visited = {sv}; // mark as visited; mark when pushing into queue
-    std::set<int> t_visited = {tv};
-    std::queue<int> sq, tq;
+    std::set<VID_TYPE> s_visited; // mark as visited; mark when pushing into queue
+    s_visited.insert(sv);
+    std::set<VID_TYPE> t_visited;
+    t_visited.insert(tv);
+    std::queue<VID_TYPE> sq, tq;
     sq.push(sv);
     tq.push(tv);
-    int curr;
-    int joint = 0;
+    VID_TYPE curr;
+    VID_TYPE joint = 0;
     // s->joint: only one prec
     // joint->t: only one succ
-    std::map<int, int> prec, succ;
+    std::map<VID_TYPE, VID_TYPE> prec, succ;
     while (sq.empty() == 0 && tq.empty() == 0 && joint == 0)
     {
 #if TIME_KILL_ENABLE == 1
@@ -293,13 +295,13 @@ int BiBFSBaseline::find_path2()
         {
             curr = sq.front();
             sq.pop();
-            std::vector<int> neighbors;
+            std::vector<VID_TYPE> neighbors;
             neighbors = G->get_neighbors(curr);
 #if DEBUG_LEVEL <= TRACE
             std::cout << "neighbors:";
             print_vectorln(neighbors);
 #endif //#if DEBUG_LEVEL <= TRACE
-            for (int n : neighbors)
+            for (VID_TYPE n : neighbors)
             {
                 if (path1_vSeq.empty() && curr == sv && n == tv)
                 { // path1是s->t这样的路径，path2要避免直接s->t
@@ -326,13 +328,13 @@ int BiBFSBaseline::find_path2()
         {
             curr = tq.front();
             tq.pop();
-            std::vector<int> neighbors;
+            std::vector<VID_TYPE> neighbors;
             neighbors = G->get_neighbors(curr);
 #if DEBUG_LEVEL <= TRACE
             std::cout << "neighbors:";
             print_vectorln(neighbors);
 #endif //#if DEBUG_LEVEL <= TRACE
-            for (int n : neighbors)
+            for (VID_TYPE n : neighbors)
             {
                 if (path1_vSeq.empty() && curr == tv && n == sv)
                 { // path1是s->t这样的路径，path2要避免直接s->t
@@ -386,12 +388,12 @@ int BiBFSBaseline::find_path2()
 
 int BiBFSBaseline::run()
 {
-    std::map<int, VisitedNode *>::iterator s_iterator = src_v2visited.begin();
-    std::map<int, VisitedNode *>::iterator t_iterator = tat_v2visited.begin();
+    std::map<VID_TYPE, VisitedNode *>::iterator s_iterator = src_v2visited.begin();
+    std::map<VID_TYPE, VisitedNode *>::iterator t_iterator = tat_v2visited.begin();
     while (s_iterator != src_v2visited.end() && t_iterator != tat_v2visited.end())
     {
-        int v1 = s_iterator->first;
-        int v2 = t_iterator->first;
+        VID_TYPE v1 = s_iterator->first;
+        VID_TYPE v2 = t_iterator->first;
         if (v1 == v2)
         {
             //一个重合点joint
@@ -425,7 +427,7 @@ int BiBFSBaseline::run()
     return 0;
 }
 
-void BiBFSBaseline::print_pathln(std::deque<int> path_vSeq, bool print_st)
+void BiBFSBaseline::print_pathln(std::deque<VID_TYPE> path_vSeq, bool print_st)
 {
     if (print_st)
     {
@@ -474,12 +476,12 @@ void BiBFSBaseline::print_jointln()
 {
     print_with_colorln(YELLOW, "joints:");
     std::vector<VertexWithNum> joints;
-    std::map<int, VisitedNode *>::iterator s_iterator = src_v2visited.begin();
-    std::map<int, VisitedNode *>::iterator t_iterator = tat_v2visited.begin();
+    std::map<VID_TYPE, VisitedNode *>::iterator s_iterator = src_v2visited.begin();
+    std::map<VID_TYPE, VisitedNode *>::iterator t_iterator = tat_v2visited.begin();
     while (s_iterator != src_v2visited.end() && t_iterator != tat_v2visited.end())
     {
-        int v1 = s_iterator->first;
-        int v2 = t_iterator->first;
+        VID_TYPE v1 = s_iterator->first;
+        VID_TYPE v2 = t_iterator->first;
         if (v1 == v2)
         {
             std::cout << v1 << "\t";
@@ -513,7 +515,7 @@ void BiBFSBaseline::print_jointln()
 }
 #endif //#if DEBUG_LEVEL <= DEBUG
 
-void print_1v_1l_pvinBFS(BiBFSBaseline &act, int v)
+void print_1v_1l_pvinBFS(BiBFSBaseline &act, VID_TYPE v)
 {
     std::cout << "v" << v;
     std::cout << "\nsrc_v2visited:" << std::endl;
@@ -530,7 +532,7 @@ void print_1v_1l_pvinBFS(BiBFSBaseline &act, int v)
     std::cout << std::endl;
 }
 
-int baseline(Graph &g, long long side_depth, int s, int t, bool print_result)
+int baseline(Graph &g, long long side_depth, VID_TYPE s, VID_TYPE t, bool print_result)
 {
     BiBFSBaseline act;
     /* step1: 双搜bfs，搜索深度为side_depth */
@@ -559,7 +561,7 @@ int baseline(Graph &g, long long side_depth, int s, int t, bool print_result)
         }
     }
     // s和t度数都必须>=2才可能
-    int s_out_degree, t_in_degree;
+    VID_TYPE s_out_degree, t_in_degree;
     s_out_degree = g.get_degree(act.sv);
     t_in_degree = g.get_degree(act.tv);
     if (t_in_degree < 2 || s_out_degree < 2)
@@ -609,9 +611,9 @@ int baseline(Graph &g, long long side_depth, int s, int t, bool print_result)
     return result;
 }
 
-long long bfs(long long stepNum, Graph &g, int vid, std::map<int, VisitedNode *> &v2visited)
+long long bfs(long long stepNum, Graph &g, VID_TYPE vid, std::map<VID_TYPE, VisitedNode *> &v2visited)
 {
-    int v_ptr = vid;
+    VID_TYPE v_ptr = vid;
     VisitedNode *firstVisited = new VisitedNode(v_ptr, 0);
     std::vector<VisitedNode *> currentLevelVisited;
     currentLevelVisited.push_back(firstVisited); //当前层将要访问的顶点
@@ -630,11 +632,11 @@ long long bfs(long long stepNum, Graph &g, int vid, std::map<int, VisitedNode *>
         {
             VisitedNode *curVisited = currentLevelVisited[i];
 
-            std::vector<int> eList = g.get_neighbors(curVisited->v); // neighbors
+            std::vector<VID_TYPE> eList = g.get_neighbors(curVisited->v); // neighbors
 
             for (size_t j = 0; j < eList.size(); j++)
             {
-                int nextV = eList[j];
+                VID_TYPE nextV = eList[j];
                 VisitedNode *nextVisited = v2visited[nextV];
                 //未曾访问过
                 if (nextVisited == NULL)

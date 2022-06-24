@@ -9,11 +9,11 @@
 
 void to_boost_graph(graph_t &g, Graph &src)
 {
-    int n = src.vertexnum();
-    for (int v = 0; v < n; ++v)
+    VID_TYPE n = src.vertexnum();
+    for (VID_TYPE v = 0; v < n; ++v)
     {
-        std::vector<int> nbs = src.get_neighbors(v);
-        for (int nb : nbs)
+        std::vector<VID_TYPE> nbs = src.get_neighbors(v);
+        for (VID_TYPE nb : nbs)
         {
             // for undirectedS, add(u,v) and add(v,u) would add 2 multiedge
             // nb<v then (nb,v) must already in
@@ -25,7 +25,7 @@ void to_boost_graph(graph_t &g, Graph &src)
     }
 }
 
-bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &before, std::vector<Edge> &after, bool print_comp_detail)
+bool st_biconnected_component(graph_t &g, VID_TYPE &s, VID_TYPE &t, std::vector<Edge> &before, std::vector<Edge> &after, bool print_comp_detail)
 {
     boost::edge_component_t edge_component;
     boost::property_map<graph_t, boost::edge_component_t>::type component = get(edge_component, g);
@@ -35,10 +35,10 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
     bool st_one_block = 0;
     // find which block s and t in
-    std::set<int> snumv, tnumv;
+    std::set<VID_TYPE> snumv, tnumv;
     // component[*ei]: ei's comp number
     // source(*ei, g): size_t source vertex
-    int tmps, tmpt;
+    VID_TYPE tmps, tmpt;
     std::vector<std::vector<Edge>> comps(num_comps);
     for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
     {
@@ -71,8 +71,8 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
         print_with_color(BLUE, "t in comps: ");
         print_setln(tnumv);
     }
-    int snum = -1;
-    for (int sn : snumv)
+    VID_TYPE snum = -1;
+    for (VID_TYPE sn : snumv)
     {
         if (tnumv.count(sn))
         {
@@ -88,11 +88,11 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     }
     // sort edges
     before.clear();
-    int es, et;
-    std::set<int> old; // vertices
+    VID_TYPE es, et;
+    std::set<VID_TYPE> old; // vertices
     for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
     {
-        if ((int)component[*ei] == snum)
+        if (component[*ei] == snum)
         {
             es = source(*ei, g);
             et = target(*ei, g);
@@ -112,9 +112,9 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     auto it = std::unique(before.begin(), before.end());
     before.resize(it - before.begin());
     // mapping
-    std::unordered_map<int, int> old2new;
-    int i = 0;
-    for (int oldv : old)
+    std::unordered_map<VID_TYPE, VID_TYPE> old2new;
+    VID_TYPE i = 0;
+    for (VID_TYPE oldv : old)
     {
         old2new[oldv] = i++;
     }
@@ -128,20 +128,20 @@ bool st_biconnected_component(graph_t &g, int &s, int &t, std::vector<Edge> &bef
     return st_one_block;
 }
 
-bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old)
+bool rec_st_biconnected_component(Graph &g, VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
 {
-    int n = g.vertexnum();
+    VID_TYPE n = g.vertexnum();
 
-    std::vector<int> num(n), par(n), low(n), art(n), stk;
-    std::vector<int> comp;
+    std::vector<VID_TYPE> num(n), par(n), low(n), art(n), stk;
+    std::vector<VID_TYPE> comp;
     bool contain_s, contain_t;
-    std::function<bool(int, int, int &)> dfs = [&](int u, int p, int &dfs_number)
+    std::function<bool(VID_TYPE, VID_TYPE, VID_TYPE &)> dfs = [&](VID_TYPE u, VID_TYPE p, VID_TYPE &dfs_number)
     {
         par[u] = p;
         num[u] = low[u] = ++dfs_number;
         stk.push_back(u);
 
-        for (int v : g.get_neighbors(u))
+        for (VID_TYPE v : g.get_neighbors(u))
         {
             if (v != p)
             {
@@ -162,7 +162,7 @@ bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<i
                         contain_t = (u == t);
                         while (comp.back() != v)
                         {
-                            int tmpv = stk.back();
+                            VID_TYPE tmpv = stk.back();
                             if (tmpv == s)
                             {
                                 contain_s = 1;
@@ -176,7 +176,7 @@ bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<i
                         }
                         if (contain_s && contain_t)
                         {
-                            write_graph(g, s, t, new2old, comp);
+                            g.write_graph(s, t, new2old, comp);
                             return 1;
                         }
                     }
@@ -188,20 +188,20 @@ bool rec_st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<i
         return 0;
     };
 
-    int dfs_number = 0;
+    VID_TYPE dfs_number = 0;
     bool re = dfs(s, -1, dfs_number);
     print_with_colorln(BLUE, "vid\tlowpt:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << low[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tdfsnumber:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << num[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tpar:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << par[i] << std::endl;
     }

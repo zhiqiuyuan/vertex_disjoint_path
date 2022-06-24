@@ -2,19 +2,19 @@
 #if TIME_KILL_ENABLE == 1
 extern bool is_time_out;
 #endif //#if TIME_KILL_ENABLE == 1
-int solve_2VDPP(Graph &g, int s, int t)
+int solve_2VDPP(Graph &g, VID_TYPE s, VID_TYPE t)
 {
-    std::vector<int> path1, path2;
-    std::back_insert_iterator<std::vector<int>> path1_back_it(path1), path2_back_it(path2);
-    std::unordered_map<int, int> new2old;
+    std::vector<VID_TYPE> path1, path2;
+    std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it(path1), path2_back_it(path2);
+    std::unordered_map<VID_TYPE, VID_TYPE> new2old;
 #if DEBUG_LEVEL <= DEBUG
     print_with_colorln(DARK_YELLOW, "reduction: to b(s,t)");
 #endif //#if DEBUG_LEVEL <= DEBUG
     int code = st_biconnected_component(g, s, t, new2old);
     if (code == 1)
     {
-        std::vector<int> p1, p2;
-        std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
+        std::vector<VID_TYPE> p1, p2;
+        std::back_insert_iterator<std::vector<VID_TYPE>> p1_back_it(p1), p2_back_it(p2);
         code = solve_on_2connected(g, s, t, p1_back_it, p2_back_it);
         if (code == 1)
         {
@@ -40,27 +40,29 @@ int solve_2VDPP(Graph &g, int s, int t)
     return code;
 }
 
-int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
+int solve_on_2connected(Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it)
 {
     return remove_2vCut_containing_s(REMOVE_S, g, s, t, path1_back_it, path2_back_it);
 }
 
-int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old)
+// dfs number: from 1
+// dfs parent and low point: identify by dfs number
+int st_biconnected_component(Graph &g, VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
 {
-    int n = g.vertexnum();
-    std::vector<int> nr(n, 0);                  // dfs number
-    std::vector<int> p(n, 0);                   // dfs parent
-    std::vector<int> lowpt(n, 0);               // low point
-    std::set<std::pair<int, int>> edge_visited; // mark edge visited
-    std::vector<int> next_neighbor_idx(n, 0);   // mark the next neighbor idx to visit for each vertex
-    int i = 1;                                  // current dfs number to assign
-    int v = s;                                  // current vertex
+    VID_TYPE n = g.vertexnum();
+    std::vector<VID_TYPE> nr(n, 0);                // dfs number
+    std::vector<VID_TYPE> p(n, 0);                 // dfs parent
+    std::vector<VID_TYPE> lowpt(n, 0);             // low point
+    std::vector<VID_TYPE> next_neighbor_idx(n, 0); // mark the next neighbor idx to visit for each vertex
+    VID_TYPE i = 1;                                // current dfs number to assign
+    VID_TYPE v = s;                                // current vertex
     nr[s] = i;
     lowpt[s] = i;
-    int w;
+    VID_TYPE w;
 
-    std::vector<int> S = {s}; // stack of vertex
-    bool contain_t_flag = 0;  // top componet at stack S contains t
+    std::vector<VID_TYPE> S; // stack of vertex
+    S.push_back(s);
+    bool contain_t_flag = 0; // top componet at stack S contains t
     // while (p[v] || next_neighbor_idx[s] < s_degree)
     // while (p[v] || next_neighbor_idx[s] < s_degree || next_neighbor_idx[v] < g.get_degree(v))
     // while (next_neighbor_idx[v] < g.get_degree(v))
@@ -158,20 +160,20 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
             // found block(s), vertex in stack is V(block(s))
             if (contain_t_flag)
             {
-                write_graph(g, s, t, new2old, S);
+                g.write_graph(s, t, new2old, S);
 #if DEBUG_LEVEL <= TRACE
                 print_with_colorln(BLUE, "vid\tlowpt:");
-                for (int i = 0; i < n; ++i)
+                for (VID_TYPE i = 0; i < n; ++i)
                 {
                     std::cout << i << "\t" << lowpt[i] << std::endl;
                 }
                 print_with_colorln(BLUE, "vid\tdfsnumber:");
-                for (int i = 0; i < n; ++i)
+                for (VID_TYPE i = 0; i < n; ++i)
                 {
                     std::cout << i << "\t" << nr[i] << std::endl;
                 }
                 print_with_colorln(BLUE, "vid\tpar:");
-                for (int i = 0; i < n; ++i)
+                for (VID_TYPE i = 0; i < n; ++i)
                 {
                     std::cout << i << "\t" << p[i] << std::endl;
                 }
@@ -205,17 +207,17 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
     }
 #if DEBUG_LEVEL <= TRACE
     print_with_colorln(BLUE, "vid\tlowpt:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << lowpt[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tdfsnumber:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << nr[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tpar:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << p[i] << std::endl;
     }
@@ -223,23 +225,23 @@ int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, i
     return 0;
 }
 // remove_2vCut_containing_s 注意st交替调用怎么重组路径
-int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
+int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it)
 {
 #if TIME_KILL_ENABLE == 1
     if (is_time_out)
         return TIME_EXCEED_RESULT;
 #endif //#if TIME_KILL_ENABLE == 1
     /*remove 2-vertex-cut containing s*/
-    std::vector<int> s_neighbors = g.delete_vertex(s);
+    std::vector<VID_TYPE> s_neighbors = g.delete_vertex(s);
 #if DEBUG_LEVEL <= TRACE
     g.print_graph();
     std::cout << std::endl;
-#endif                                                     //#if DEBUG_LEVEL <= TRACE
-    std::vector<bctreeNode> bctree;                        // idx is comp number too, parent pointer representation
-    int t_comp;                                            // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
-    std::vector<std::set<int>> comps_V;                    // comp number->comps vertex set
-    std::vector<std::vector<int>> s_adj_comp;              // idx correspond to s_neighbors: which comp(s) is s_neighbors[i] in(note that if s_neighbors[i] is cutpoint, more than 1 located comp; else 1 located comp)
-    std::unordered_map<int, std::vector<int>> comp2s_nbrs; // if one comp contains one s_neighbors, record it
+#endif                                                          //#if DEBUG_LEVEL <= TRACE
+    std::vector<bctreeNode> bctree;                             // idx is comp number too, parent pointer representation
+    int t_comp;                                                 // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+    std::vector<std::set<VID_TYPE>> comps_V;                    // comp number->comps vertex set
+    std::vector<std::vector<int>> s_adj_comp;                   // idx correspond to s_neighbors: which comp(s) is s_neighbors[i] in(note that if s_neighbors[i] is cutpoint, more than 1 located comp; else 1 located comp)
+    std::unordered_map<int, std::vector<VID_TYPE>> comp2s_nbrs; // if one comp contains one s_neighbors, record it
     bool t_is_cut_point;
     int code = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
 #if TIME_KILL_ENABLE == 1
@@ -267,12 +269,12 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
         if (t_is_cut_point) //此分支测试近似无误 path1: 0 2 9 path2: 0 5 9
         {
             int compu, compv;
-            int u, v;
+            VID_TYPE u, v;
             no_common_ancestor(compu, compv, u, v, s_adj_comp, bctree, t_comp);
             u = s_neighbors[u];
             v = s_neighbors[v];
-            std::vector<int> u2t, v2t;
-            std::back_insert_iterator<std::vector<int>> u2t_back_it(u2t), v2t_back_it(v2t);
+            std::vector<VID_TYPE> u2t, v2t;
+            std::back_insert_iterator<std::vector<VID_TYPE>> u2t_back_it(u2t), v2t_back_it(v2t);
             // "t"(i.e. root of bctree) is cutpoint,thus "t" is the destination of the last path segment
             get_parent_path(compu, u, t, u2t_back_it, g, bctree, comps_V);
             get_parent_path(compv, v, t, v2t_back_it, g, bctree, comps_V);
@@ -307,11 +309,11 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
         {
             if (comp2s_nbrs.count(t_comp))
             {
-                std::vector<int> link_ends = comp2s_nbrs[t_comp];
+                std::vector<VID_TYPE> link_ends = comp2s_nbrs[t_comp];
                 if (link_ends.size() >= 2) // u v
                 {
                     // new g: b("t"), edge("s",u), edge("s",v)
-                    std::unordered_map<int, int> new2old;
+                    std::unordered_map<VID_TYPE, VID_TYPE> new2old;
                     g.recover_vertex(s, {link_ends[0], link_ends[1]});
                     comps_V[t_comp].insert(s);
                     // int old_s = s;
@@ -319,11 +321,11 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 #if DEBUG_LEVEL <= DEBUG
                     print_with_colorln(DARK_YELLOW, "reduction: in remove_2vCut_containing_" + std::string((sel == REMOVE_S ? "s" : "t")));
 #endif //#if DEBUG_LEVEL <= DEBUG
-                    write_graph(g, s, t, new2old, comps_V[t_comp]);
+                    g.write_graph(s, t, new2old, comps_V[t_comp]);
                     // comps_V[t_comp].erase(old_s);
 
-                    std::vector<int> p1, p2;
-                    std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
+                    std::vector<VID_TYPE> p1, p2;
+                    std::back_insert_iterator<std::vector<VID_TYPE>> p1_back_it(p1), p2_back_it(p2);
                     int code;
                     if (sel == REMOVE_S)
                         code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
@@ -352,7 +354,7 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                 {
                     // new g: b("t"), edge("s",u), edge("s",v)
                     // in which v is: start from any "s"_adj_comp(except b("t")) start_comp (parent path), the cut point adjancent to "t"
-                    int u = link_ends[0];
+                    VID_TYPE u = link_ends[0];
                     int start_comp;
                     // must exist: "s" has only 1 link to b("t"), given original G 2connected, there must be another link from "s" to other comp
                     for (auto p : comp2s_nbrs)
@@ -364,29 +366,29 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
                         }
                     }
                     // "s"->k-(parent path)->v-(t_comp)->"t"
-                    int k = comp2s_nbrs[start_comp][0];
-                    std::vector<int> k2v, k2t_cutpoint;
-                    std::back_insert_iterator<std::vector<int>> k2v_back_it(k2v), k2t_cutpoint_back_it(k2t_cutpoint);
+                    VID_TYPE k = comp2s_nbrs[start_comp][0];
+                    std::vector<VID_TYPE> k2v, k2t_cutpoint;
+                    std::back_insert_iterator<std::vector<VID_TYPE>> k2v_back_it(k2v), k2t_cutpoint_back_it(k2t_cutpoint);
                     get_cut_point_path(start_comp, k, t, bctree, k2t_cutpoint_back_it);
-                    int v = k2t_cutpoint[k2t_cutpoint.size() - 2]; // last is t, the second last is v (2nd last must exist, otherwise this s_nbr is located in b(t), which contradict with only one link from s to b(t))
+                    VID_TYPE v = k2t_cutpoint[k2t_cutpoint.size() - 2]; // last is t, the second last is v (2nd last must exist, otherwise this s_nbr is located in b(t), which contradict with only one link from s to b(t))
                     get_parent_path(start_comp, k, v, k2v_back_it, g, bctree, comps_V);
 #if DEBUG_LEVEL <= TRACE
                     print_vectorln(k2v);
 #endif //#if DEBUG_LEVEL <= TRACE
 
                     // new g: b("t"), edge("s",u), edge("s",v)
-                    std::unordered_map<int, int> new2old;
+                    std::unordered_map<VID_TYPE, VID_TYPE> new2old;
                     g.recover_vertex(s, {u, v});
                     comps_V[t_comp].insert(s);
-                    // int old_s = s;
+                    // VID_TYPE old_s = s;
 
 #if DEBUG_LEVEL <= DEBUG
                     print_with_colorln(DARK_YELLOW, "reduction: in remove_2vCut_containing_" + std::string((sel == REMOVE_S ? "s" : "t")));
 #endif //#if DEBUG_LEVEL <= DEBUG
-                    write_graph(g, s, t, new2old, comps_V[t_comp]);
+                    g.write_graph(s, t, new2old, comps_V[t_comp]);
                     // comps_V[t_comp].erase(old_s);
-                    std::vector<int> p1, p2;
-                    std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
+                    std::vector<VID_TYPE> p1, p2;
+                    std::back_insert_iterator<std::vector<VID_TYPE>> p1_back_it(p1), p2_back_it(p2);
                     int code;
                     if (sel == REMOVE_S)
                         code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
@@ -457,17 +459,17 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
             {
                 // new g: b("t"), edge("s",a), edge("s",b)
                 int start_comp1, start_comp2;
-                int k1, k2;
+                VID_TYPE k1, k2;
                 no_common_ancestor(start_comp1, start_comp2, k1, k2, s_adj_comp, bctree, t_comp);
                 k1 = s_neighbors[k1];
                 k2 = s_neighbors[k2];
-                std::vector<int> k12a, k22b, k12t_cutpoint, k22t_cutpoint;
-                std::back_insert_iterator<std::vector<int>> k12a_back_it(k12a), k22b_back_it(k22b), k12t_cutpoint_back_it(k12t_cutpoint), k22t_cutpoint_back_it(k22t_cutpoint);
+                std::vector<VID_TYPE> k12a, k22b, k12t_cutpoint, k22t_cutpoint;
+                std::back_insert_iterator<std::vector<VID_TYPE>> k12a_back_it(k12a), k22b_back_it(k22b), k12t_cutpoint_back_it(k12t_cutpoint), k22t_cutpoint_back_it(k22t_cutpoint);
                 get_cut_point_path(start_comp1, k1, t, bctree, k12t_cutpoint_back_it);
-                int a = k12t_cutpoint[k12t_cutpoint.size() - 2]; // last is t, the second last is a
+                VID_TYPE a = k12t_cutpoint[k12t_cutpoint.size() - 2]; // last is t, the second last is a
                 get_parent_path(start_comp1, k1, a, k12a_back_it, g, bctree, comps_V);
                 get_cut_point_path(start_comp2, k2, t, bctree, k22t_cutpoint_back_it);
-                int b = k22t_cutpoint[k22t_cutpoint.size() - 2]; // last is t, the second last is b
+                VID_TYPE b = k22t_cutpoint[k22t_cutpoint.size() - 2]; // last is t, the second last is b
                 get_parent_path(start_comp2, k2, b, k22b_back_it, g, bctree, comps_V);
 
 #if DEBUG_LEVEL <= TRACE
@@ -476,18 +478,18 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 #endif //#if DEBUG_LEVEL <= TRACE
 
                 // new g: b("t"), edge("s",a), edge("s",b)
-                std::unordered_map<int, int> new2old;
+                std::unordered_map<VID_TYPE, VID_TYPE> new2old;
                 g.recover_vertex(s, {a, b});
                 comps_V[t_comp].insert(s);
-                // int old_s = s;
+                // VID_TYPE old_s = s;
 
 #if DEBUG_LEVEL <= DEBUG
                 print_with_colorln(DARK_YELLOW, "reduction: in remove_2vCut_containing_" + std::string((sel == REMOVE_S ? "s" : "t")));
 #endif //#if DEBUG_LEVEL <= DEBUG
-                write_graph(g, s, t, new2old, comps_V[t_comp]);
+                g.write_graph(s, t, new2old, comps_V[t_comp]);
                 // comps_V[t_comp].erase(old_s);
-                std::vector<int> p1, p2;
-                std::back_insert_iterator<std::vector<int>> p1_back_it(p1), p2_back_it(p2);
+                std::vector<VID_TYPE> p1, p2;
+                std::back_insert_iterator<std::vector<VID_TYPE>> p1_back_it(p1), p2_back_it(p2);
                 int code;
                 if (sel == REMOVE_S)
                     code = remove_2vCut_containing_s(REMOVE_T, g, t, s, p1_back_it, p2_back_it);
@@ -590,7 +592,7 @@ int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::b
 }
 
 #if DEBUG_LEVEL <= TRACE
-void print_cutpoint2comp(std::unordered_map<int, std::vector<int>> cutpoint2comp)
+void print_cutpoint2comp(std::unordered_map<VID_TYPE, std::vector<int>> cutpoint2comp)
 {
     print_with_colorln(BLUE, "cutpoint:\thanging comp");
     for (auto p : cutpoint2comp)
@@ -606,7 +608,7 @@ void print_cutpoint2comp(std::unordered_map<int, std::vector<int>> cutpoint2comp
 #endif // DEBUG_LEVEL<=TRACE
 // insert v into comp k
 // update comps_V, s_adj_comp, bctree
-inline void insert_v_into_comp(std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, std::vector<bctreeNode> &bctree, int k, int v, std::unordered_map<int, int> &snbrs2idx, std::unordered_map<int, std::vector<int>> cutpoint2comp)
+inline void insert_v_into_comp(std::vector<std::set<VID_TYPE>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, std::vector<bctreeNode> &bctree, int k, VID_TYPE v, std::unordered_map<VID_TYPE, int> &snbrs2idx, std::unordered_map<VID_TYPE, std::vector<int>> cutpoint2comp)
 {
     comps_V[k].insert(v);
     // if v is snbr
@@ -631,7 +633,7 @@ inline void insert_v_into_comp(std::vector<std::set<int>> &comps_V, std::vector<
 }
 // insert "parent cut point" v into comp k
 //  update comps_V, s_adj_comp
-inline void insert_parentcutv_into_comp(std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, int k, int v, std::unordered_map<int, int> &snbrs2idx)
+inline void insert_parentcutv_into_comp(std::vector<std::set<VID_TYPE>> &comps_V, std::vector<std::vector<int>> &s_adj_comp, int k, VID_TYPE v, std::unordered_map<VID_TYPE, int> &snbrs2idx)
 {
     comps_V[k].insert(v);
     // if v is snbr
@@ -642,9 +644,9 @@ inline void insert_parentcutv_into_comp(std::vector<std::set<int>> &comps_V, std
     }
 }
 
-int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp)
+int build_bctree(Graph &g, VID_TYPE t, const std::vector<VID_TYPE> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<VID_TYPE>> &comps_V, std::vector<std::vector<int>> &s_adj_comp)
 {
-    std::unordered_map<int, int> snbrs2idx; // to idx in s_neighbors
+    std::unordered_map<VID_TYPE, int> snbrs2idx; // to idx in s_neighbors
     for (size_t i = 0; i < s_neighbors.size(); ++i)
     {
         snbrs2idx[s_neighbors[i]] = i;
@@ -656,23 +658,23 @@ int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vecto
     }
     bool t_is_cut_point = 0;
 
-    int n = g.vertexnum();
-    std::vector<int> nr(n, 0);                  // dfs number
-    std::vector<int> p(n, 0);                   // dfs parent
-    std::vector<int> lowpt(n, 0);               // low point
-    std::set<std::pair<int, int>> edge_visited; // mark edge visited
-    std::vector<int> next_neighbor_idx(n, 0);   // mark the next neighbor idx to visit for each vertex
-    int i = 1;                                  // current dfs number to assign
-    int k = 0;                                  // current comp number
-    int v = t;                                  // current vertex
+    VID_TYPE n = g.vertexnum();
+    std::vector<VID_TYPE> nr(n, 0);                // dfs number
+    std::vector<VID_TYPE> p(n, 0);                 // dfs parent
+    std::vector<VID_TYPE> lowpt(n, 0);             // low point
+    std::vector<VID_TYPE> next_neighbor_idx(n, 0); // mark the next neighbor idx to visit for each vertex
+    VID_TYPE i = 1;                                // current dfs number to assign
+    int k = 0;                                     // current comp number
+    VID_TYPE v = t;                                // current vertex
     nr[v] = i;
     lowpt[v] = i;
-    int w;
-    std::unordered_map<int, std::vector<int>> cutpoint2comp; // bctreeNode(.second[i]).cut_point is .first
+    VID_TYPE w;
+    std::unordered_map<VID_TYPE, std::vector<int>> cutpoint2comp; // bctreeNode(.second[i]).cut_point is .first
     // all comps that hanging at each cutpoint. used for determine parent comp for bctree
     std::set<int> t_comps;
 
-    std::vector<int> S = {v}; // stack of vertex
+    std::vector<VID_TYPE> S; // stack of vertex
+    S.push_back(v);
     // while (p[v] || next_neighbor_idx[t] < t_degree)
     // while (next_neighbor_idx[v] < g.get_degree(v))
     while ((v == t && next_neighbor_idx[v] >= g.get_degree(v)) == 0)
@@ -730,7 +732,7 @@ int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vecto
                 comps_V.resize(k + 1);
                 while (S.back() != v)
                 {
-                    int tmpv = S.back();
+                    VID_TYPE tmpv = S.back();
                     insert_v_into_comp(comps_V, s_adj_comp, bctree, k, tmpv, snbrs2idx, cutpoint2comp);
                     S.pop_back();
 #if DEBUG_LEVEL <= TRACE
@@ -770,7 +772,7 @@ int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vecto
                 comps_V.resize(k + 1);
                 while (S.back() != v)
                 {
-                    int tmpv = S.back();
+                    VID_TYPE tmpv = S.back();
                     insert_v_into_comp(comps_V, s_adj_comp, bctree, k, tmpv, snbrs2idx, cutpoint2comp);
                     S.pop_back();
 #if DEBUG_LEVEL <= TRACE
@@ -813,17 +815,17 @@ int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vecto
     comps_V.resize(k);
 #if DEBUG_LEVEL <= TRACE
     print_with_colorln(BLUE, "vid\tlowpt:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << lowpt[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tdfsnumber:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << nr[i] << std::endl;
     }
     print_with_colorln(BLUE, "vid\tpar:");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << p[i] << std::endl;
     }
@@ -840,20 +842,20 @@ void print_bctree_vector(const std::vector<bctreeNode> &bctree)
         std::cout << i << "\t" << bctree[i].parent << "\t" << bctree[i].cut_point << std::endl;
     }
 }
-void print_comps_V(const std::vector<std::set<int>> &comps_V)
+void print_comps_V(const std::vector<std::set<VID_TYPE>> &comps_V)
 {
     print_with_colorln(BLUE, "comps_V");
     for (size_t i = 0; i < comps_V.size(); ++i)
     {
         std::cout << "comp " << i << ":" << std::endl;
-        for (int v : comps_V[i])
+        for (VID_TYPE v : comps_V[i])
         {
             std::cout << v << " ";
         }
         std::cout << std::endl;
     }
 }
-void print_s_adj_comp(const std::vector<std::vector<int>> &s_adj_comp, const std::vector<int> &s_neighbors)
+void print_s_adj_comp(const std::vector<std::vector<int>> &s_adj_comp, const std::vector<VID_TYPE> &s_neighbors)
 {
     print_with_colorln(BLUE, "s_adj_comp");
     std::cout << "snbr:\tadj_comps" << std::endl;
@@ -880,7 +882,7 @@ int get_root_comp(int comp, const std::vector<bctreeNode> &bctree, int t_comp)
     }
     return c;
 }
-void no_common_ancestor(int &compu, int &compv, int &uidx, int &vidx, const std::vector<std::vector<int>> &s_adj_comp, const std::vector<bctreeNode> &bctree, int t_comp)
+void no_common_ancestor(int &compu, int &compv, VID_TYPE &uidx, VID_TYPE &vidx, const std::vector<std::vector<int>> &s_adj_comp, const std::vector<bctreeNode> &bctree, int t_comp)
 {
     std::unordered_map<int, std::vector<int>> rootcomp2comp, rootcomp2snbridx;
     int s_nbrs_num = s_adj_comp.size();
@@ -957,23 +959,25 @@ void no_common_ancestor(int &compu, int &compv, int &uidx, int &vidx, const std:
 // only visit vertices in vset in g
 // s!=t: add [s,t) to path_back_it
 // s==t:do nothing
-bool bibfs_get_path(int sv, int tv, std::back_insert_iterator<std::vector<int>> path_back_it, const std::set<int> &vset, Graph &g)
+bool bibfs_get_path(VID_TYPE sv, VID_TYPE tv, std::back_insert_iterator<std::vector<VID_TYPE>> path_back_it, const std::set<VID_TYPE> &vset, Graph &g)
 {
     if (sv == tv)
     {
         return 1;
     }
-    std::deque<int> path;
-    std::set<int> s_visited = {sv}; // mark as visited; mark when pushing into queue
-    std::set<int> t_visited = {tv};
-    std::queue<int> sq, tq;
+    std::deque<VID_TYPE> path;
+    std::set<VID_TYPE> s_visited; // mark as visited; mark when pushing into queue
+    s_visited.insert(sv);
+    std::set<VID_TYPE> t_visited;
+    t_visited.insert(tv);
+    std::queue<VID_TYPE> sq, tq;
     sq.push(sv);
     tq.push(tv);
-    int curr;
-    int joint = -1;
+    VID_TYPE curr;
+    VID_TYPE joint = -1;
     // s->joint: only one prec
     // joint->t: only one succ
-    std::map<int, int> prec, succ;
+    std::map<VID_TYPE, VID_TYPE> prec, succ;
     while (sq.empty() == 0 && tq.empty() == 0 && joint == -1)
     {
 #if DEBUG_LEVEL <= TRACE
@@ -987,12 +991,12 @@ bool bibfs_get_path(int sv, int tv, std::back_insert_iterator<std::vector<int>> 
         {
             curr = sq.front();
             sq.pop();
-            std::vector<int> neighbors = g.get_neighbors(curr);
+            std::vector<VID_TYPE> neighbors = g.get_neighbors(curr);
 #if DEBUG_LEVEL <= TRACE
             std::cout << curr << " neighbors:";
             print_vectorln(neighbors);
 #endif //#if DEBUG_LEVEL <= TRACE
-            for (int n : neighbors)
+            for (VID_TYPE n : neighbors)
             {
                 if (vset.count(n))
                 {
@@ -1016,12 +1020,12 @@ bool bibfs_get_path(int sv, int tv, std::back_insert_iterator<std::vector<int>> 
         {
             curr = tq.front();
             tq.pop();
-            std::vector<int> neighbors = g.get_neighbors(curr);
+            std::vector<VID_TYPE> neighbors = g.get_neighbors(curr);
 #if DEBUG_LEVEL <= TRACE
             std::cout << curr << " neighbors:";
             print_vectorln(neighbors);
 #endif //#if DEBUG_LEVEL <= TRACE
-            for (int n : neighbors)
+            for (VID_TYPE n : neighbors)
             {
                 if (vset.count(n))
                 {
@@ -1042,7 +1046,7 @@ bool bibfs_get_path(int sv, int tv, std::back_insert_iterator<std::vector<int>> 
         }
     }
     // trace path
-    if (joint >= 0)
+    if (joint != -1)
     {
         curr = joint;
         // tv is not included in path
@@ -1078,10 +1082,10 @@ bool bibfs_get_path(int sv, int tv, std::back_insert_iterator<std::vector<int>> 
     return 0;
 }
 
-void get_parent_path(int start_comp, int start_v, int end_cut_point, std::back_insert_iterator<std::vector<int>> path_back_it, Graph &g, const std::vector<bctreeNode> &bctree, const std::vector<std::set<int>> &comps_V)
+void get_parent_path(int start_comp, VID_TYPE start_v, VID_TYPE end_cut_point, std::back_insert_iterator<std::vector<VID_TYPE>> path_back_it, Graph &g, const std::vector<bctreeNode> &bctree, const std::vector<std::set<VID_TYPE>> &comps_V)
 {
     // each segment: if s!=t: add[s,t); s==t:add nothing
-    int s = start_v, t = bctree[start_comp].cut_point;
+    VID_TYPE s = start_v, t = bctree[start_comp].cut_point;
     // VisitLimitedVset instance(g);
     while (t != end_cut_point && start_comp >= 0)
     {
@@ -1109,7 +1113,7 @@ void get_parent_path(int start_comp, int start_v, int end_cut_point, std::back_i
     path_back_it = end_cut_point;
 }
 
-void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bctreeNode> &bctree, std::back_insert_iterator<std::vector<int>> cppath_back_it)
+void get_cut_point_path(int start_comp, VID_TYPE start_v, VID_TYPE t, const std::vector<bctreeNode> &bctree, std::back_insert_iterator<std::vector<VID_TYPE>> cppath_back_it)
 {
     if (start_v == t)
     {
@@ -1125,11 +1129,11 @@ void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bc
     cppath_back_it = t;
 }
 
-int remove_2vCut(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it)
+int remove_2vCut(Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it)
 {
     // fake logic!! HAVEN'T IMPLEMENT YET!!
     // ensure path1.size()>=2 && path2.size()>=2 (both must contain s and t)
-    std::vector<int> st_nbrs = g.intersect_neighbors(s, t);
+    std::vector<VID_TYPE> st_nbrs = g.intersect_neighbors(s, t);
     path1_back_it = s;
     if (st_nbrs.size() > 0)
     {

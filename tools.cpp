@@ -9,24 +9,24 @@ void print_with_colorln(int color_code, std::string s)
     std::cout << ADD_COLOR(color_code, s) << std::endl;
 }
 // template <typename T>
-void print_vectorln(std::vector<int> &v)
+void print_vectorln(std::vector<VID_TYPE> &v)
 {
-    for (int i : v)
+    for (VID_TYPE i : v)
     {
         std::cout << i << " ";
     }
     std::cout << std::endl;
 }
 // template <typename T>
-void print_setln(std::set<int> &v)
+void print_setln(std::set<VID_TYPE> &v)
 {
-    for (int i : v)
+    for (VID_TYPE i : v)
     {
         std::cout << i << " ";
     }
     std::cout << std::endl;
 }
-void print_queueln(std::queue<int> q)
+void print_queueln(std::queue<VID_TYPE> q)
 {
     while (q.empty() == 0)
     {
@@ -35,15 +35,15 @@ void print_queueln(std::queue<int> q)
     }
     std::cout << std::endl;
 }
-void print_dequeln(std::deque<int> q)
+void print_dequeln(std::deque<VID_TYPE> q)
 {
-    for (int i : q)
+    for (VID_TYPE i : q)
     {
         std::cout << i << " ";
     }
     std::cout << std::endl;
 }
-void print_umapln(const std::unordered_map<int, int> &mp)
+void print_umapln(const std::unordered_map<VID_TYPE, VID_TYPE> &mp)
 {
     for (auto p : mp)
     {
@@ -84,17 +84,20 @@ long long Rand(long long possible_max)
     return re % possible_max;
 }
 
-void map_new2old(int start_idx, const std::vector<int> &newv, std::back_insert_iterator<std::vector<int>> old_back_it, std::unordered_map<int, int> &new2old)
+void map_new2old(int start_idx, const std::vector<VID_TYPE> &newv, std::back_insert_iterator<std::vector<VID_TYPE>> old_back_it, std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
 {
-    int sz = newv.size();
-    for (int i = start_idx; i < sz; ++i)
+    if (start_idx >= 0)
     {
+        int sz = newv.size();
+        for (int i = start_idx; i < sz; ++i)
+        {
 #if DEBUG_LEVEL <= TRACE
-        std::cout << new2old[newv[i]] << " ";
+            std::cout << new2old[newv[i]] << " ";
 #endif //#if DEBUG_LEVEL <= TRACE
-        old_back_it = new2old[newv[i]];
+            old_back_it = new2old[newv[i]];
+        }
+#if DEBUG_LEVEL <= TRACE
+        std::cout << std::endl;
+#endif //#if DEBUG_LEVEL <= TRACE
     }
-#if DEBUG_LEVEL <= TRACE
-    std::cout << std::endl;
-#endif //#if DEBUG_LEVEL <= TRACE
 }

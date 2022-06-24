@@ -59,3 +59,5 @@ set(MAIN_FILE_LIST
     config.h
 )
 add_executable(main ${MAIN_FILE_LIST})
+
+add_executable(tmp tmp.cpp)

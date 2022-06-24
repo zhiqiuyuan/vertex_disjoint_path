@@ -11,7 +11,7 @@ e sid tid ...
 ...
 */
 // no edata
-class TVEGraph : public Graph
+class TVEGraph : public MemGraph
 {
 public:
     bool buildGraph(std::string fname);
@@ -24,7 +24,7 @@ s1 t1
 ...
 */
 // no vdata, no edata
-class EGraph : public Graph
+class EGraph : public MemGraph
 {
 public:
     bool buildGraph(std::string fname);

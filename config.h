@@ -1,6 +1,9 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+typedef unsigned VID_TYPE;           // vid, vertex_num
+typedef unsigned long long EID_TYPE; // edge_num
+
 #define ENABLE_PROCESS_RECORD // enable record processed st_pairs
 #define TIME_KILL_ENABLE 1
 #define TIME_EXCEED_RESULT -1
@@ -10,7 +13,7 @@
 #define DEPTH_LIMIT_EXCEED_RESULT 3
 
 // debug output level
-#define DEBUG_LEVEL 2 // output all higher and equal
+#define DEBUG_LEVEL 0 // output all higher and equal
 #define ERROR 4
 #define WARN 3
 #define INFO 2

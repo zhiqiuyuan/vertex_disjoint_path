@@ -11,14 +11,15 @@ bool TVEGraph::buildGraph(std::string fname)
     }
 
     char ty;
-    int vertexNum, edgeNum;
+    VID_TYPE vertexNum;
+    EID_TYPE edgeNum;
     fin >> ty >> vertexNum >> edgeNum; // t vnum enum
     vertex_num = vertexNum;
     neighbors.resize(vertex_num);
 
     std::string no_use;
     std::getline(fin, no_use); // t vnum enum line
-    for (int i = 0; i < vertexNum; ++i)
+    for (VID_TYPE i = 0; i < vertexNum; ++i)
     {
         std::getline(fin, no_use); // absorb line
         /*
@@ -30,8 +31,8 @@ bool TVEGraph::buildGraph(std::string fname)
         }
         */
     }
-    int s, t;
-    for (int i = 0; i < edgeNum; ++i)
+    VID_TYPE s, t;
+    for (EID_TYPE i = 0; i < edgeNum; ++i)
     {
         fin >> ty >> s >> t;
         // std::cout << ty << " " << s << " " << t << std::endl;
@@ -44,8 +45,8 @@ bool TVEGraph::buildGraph(std::string fname)
         }
         // s--t
         // 避免重边
-        std::vector<int> &snb = neighbors[s];
-        std::vector<int> &tnb = neighbors[t];
+        std::vector<VID_TYPE> &snb = neighbors[s];
+        std::vector<VID_TYPE> &tnb = neighbors[t];
         if (std::find(snb.begin(), snb.end(), t) == snb.end())
         {
             snb.push_back(t);
@@ -68,16 +69,18 @@ bool EGraph::buildGraph(std::string fname)
         return 0;
     }
     // s->t
-    int s, t;
-    std::string no_use;
-    std::map<int, std::vector<int>> map_neighbors;
+    unsigned s, t;
+    // std::string no_use;
+    // std::map<VID_TYPE, std::vector<VID_TYPE>> map_neighbors;
+    // EID_TYPE i = 0; // edge record count
     while (fin >> s >> t)
     {
-        std::getline(fin, no_use); // absorb the rest line
+        // std::getline(fin, no_use); // absorb the rest line
+        add_edge(s, t);
 
-        // 避免重边
-        std::vector<int> &snb = map_neighbors[s];
-        std::vector<int> &tnb = map_neighbors[t];
+        /*// 避免重边
+        std::vector<VID_TYPE> &snb = map_neighbors[s];
+        std::vector<VID_TYPE> &tnb = map_neighbors[t];
         if (std::find(snb.begin(), snb.end(), t) == snb.end())
         {
             snb.push_back(t);
@@ -86,14 +89,23 @@ bool EGraph::buildGraph(std::string fname)
         {
             tnb.push_back(s);
         }
+        */
+
+        /*++i;
+        if (i % 100000 == 0)
+        {
+            std::cout << "read " << i << " edges done." << std::endl;
+        }
+        */
     }
-    // copy to neighbors
+    /*// copy to neighbors
     vertex_num = map_neighbors.size();
     neighbors.resize(vertex_num);
     for (auto &it : map_neighbors)
     {
         neighbors[it.first] = it.second;
     }
+    */
 
     fin.close();
     return 1;

@@ -26,8 +26,8 @@ bool is_time_out;
 
 int main(int argc, char **argv)
 {
-    TVEGraph g, g_copy;
-    // EGraph g, g_copy;
+    // TVEGraph g, g_copy;
+    EGraph g, g_copy;
 
     std::string gfname, vfname, outfname, method;
     if (argc < 7)
@@ -102,14 +102,14 @@ int main(int argc, char **argv)
     std::vector<std::pair<int, int>> st_pairs;
     std::ifstream fin(vfname);
     int s, t;
-    ///*
+    /*
     for (int i = 0; ((i < pairs_cnt) || (pairs_cnt == -1)) && fin >> s >> t; ++i)
     {
         st_pairs.emplace_back(s, t);
     }
-    //*/
+    */
 
-    /*
+    ///*
     for (int i = 0; i < 10; ++i)
     {
         for (int j = i + 1; j < 10; ++j)
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
             st_pairs.emplace_back(i, j);
         }
     }
-    */
+    //*/
 
     int cnt = 0, scnt = 0, tcnt = 0; // for average computing
     double average_d = 0;            // unit: second
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
     {
         print_with_colorln(YELLOW, "round " + std::to_string(i) + ":");
         auto start = std::chrono::system_clock::now();
-        int s, t; // start node id and target node id;
+        VID_TYPE s, t; // start node id and target node id;
         int total_cnt = 0;
         int success_cnt = 0, time_exceeding_cnt = 0;
         int result;

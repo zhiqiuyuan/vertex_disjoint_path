@@ -16,17 +16,18 @@ STEP1: reduce to 3 connected
     remove 2-vertex-cut containing t*/
 
 /*g: general graph*/
-int solve_2VDPP(Graph &g, int s, int t);
+int solve_2VDPP(Graph &g, VID_TYPE s, VID_TYPE t);
 
 // g is 2connected
 // return 2VDPP has solution or not, if yes return solution in path1 and path2
+// return -1(TIME_EXCEED_RESULT) if time exceed
 // path1 and path2 are passed as empty
-int solve_on_2connected(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
+int solve_on_2connected(Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it);
 
 // do bctree decomposing from s, stop when finishing block(s)
 // return whether block(s)==block(t), and if so, write block(s) to g and return new2old mapping
-// return 2 if time exceed
-int st_biconnected_component(Graph &g, int &s, int &t, std::unordered_map<int, int> &new2old);
+// return -1(TIME_EXCEED_RESULT) if time exceed
+int st_biconnected_component(Graph &g, VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old);
 
 /*return:
     1:solved
@@ -37,19 +38,19 @@ enum Remove2VCutSel
     REMOVE_S, // return path s->t
     REMOVE_T  // return path t->s
 };
-int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
+int remove_2vCut_containing_s(Remove2VCutSel sel, Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it);
 
 struct bctreeNode
 {
-    int parent;    // parent idx(parent comp number too) -1:no parent
-    int cut_point; // curr->parent, cutpoint(vid) on this edge
+    int parent;         // parent idx(parent comp number too) -1:no parent
+    VID_TYPE cut_point; // curr->parent, cutpoint(vid) on this edge
     bctreeNode() : parent(-1), cut_point(-1) {}
     bctreeNode(int cutv) : parent(-1), cut_point(cutv) {}
     bctreeNode(int p, int cutv) : parent(p), cut_point(cutv) {}
 };
 
 /*build_bctree rooted at t or b(t)
-return t_is_cutpoint, or 2 time exceed
+return t_is_cutpoint, or -1 time exceed
 return by reference(passed in as empty):
     std::vector<bctreeNode> bctree;                        // idx is comp number too, parent pointer representation
     int t_comp;                                            // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
@@ -58,11 +59,11 @@ return by reference(passed in as empty):
 each bctreeNode.parent==-1 will have bctreeNode.cut_point==t
 (eg,if t is not cut point: will still have bctreeNode(block(t)).cut_point==t)
 */
-int build_bctree(Graph &g, int t, const std::vector<int> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<int>> &comps_V, std::vector<std::vector<int>> &s_adj_comp);
+int build_bctree(Graph &g, VID_TYPE t, const std::vector<VID_TYPE> s_neighbors, std::vector<bctreeNode> &bctree, int &t_comp, std::vector<std::set<VID_TYPE>> &comps_V, std::vector<std::vector<int>> &s_adj_comp);
 #if DEBUG_LEVEL <= DEBUG
 void print_bctree_vector(const std::vector<bctreeNode> &bctree);
-void print_comps_V(const std::vector<std::set<int>> &comps_V);
-void print_s_adj_comp(const std::vector<std::vector<int>> &s_adj_comp, const std::vector<int> &s_neighbors);
+void print_comps_V(const std::vector<std::set<VID_TYPE>> &comps_V);
+void print_s_adj_comp(const std::vector<std::vector<int>> &s_adj_comp, const std::vector<VID_TYPE> &s_neighbors);
 #endif //#if DEBUG_LEVEL <= DEBUG
 
 // if t_comp>=0: t is not cutpoint, then every comp has root t_comp in bctree: return the "root" one step ahead of t_comp
@@ -75,7 +76,7 @@ s_nbrs that is not cutpoint are considered first
 compu compv
 u v: the correponding s_nbr idx
 */
-void no_common_ancestor(int &compu, int &compv, int &uidx, int &vidx, const std::vector<std::vector<int>> &s_adj_comp, const std::vector<bctreeNode> &bctree, int t_comp);
+void no_common_ancestor(int &compu, int &compv, VID_TYPE &uidx, VID_TYPE &vidx, const std::vector<std::vector<int>> &s_adj_comp, const std::vector<bctreeNode> &bctree, int t_comp);
 
 /*
 return the parent path in g from start_comp to end_cut_point in bctree
@@ -83,7 +84,7 @@ each path segment: cutpoint->cutpoint(1st seg: start_v->cutpoint), only visting 
 
 note that start_v==bctreeNode(start_comp).cut_point is possible, in which case 1st seg(start_v->cutpoint) would contain only 1 vertex
 */
-void get_parent_path(int start_comp, int start_v, int end_cut_point, std::back_insert_iterator<std::vector<int>> path_back_it, Graph &g, const std::vector<bctreeNode> &bctree, const std::vector<std::set<int>> &comps_V);
+void get_parent_path(int start_comp, VID_TYPE start_v, VID_TYPE end_cut_point, std::back_insert_iterator<std::vector<VID_TYPE>> path_back_it, Graph &g, const std::vector<bctreeNode> &bctree, const std::vector<std::set<VID_TYPE>> &comps_V);
 
 /*
 return the parent path consisting of cut points from start_v in start_comp to root t in bctree
@@ -93,12 +94,12 @@ t is cut point: (t)-root_block<-(parent cut point A of blocku)-blocku<-...
 t is not cut point: blockt<-(parent cut point A of blocku)-blocku<-...
     then:A
 */
-void get_cut_point_path(int start_comp, int start_v, int t, const std::vector<bctreeNode> &bctree, std::back_insert_iterator<std::vector<int>> cppath_back_it);
+void get_cut_point_path(int start_comp, VID_TYPE start_v, VID_TYPE t, const std::vector<bctreeNode> &bctree, std::back_insert_iterator<std::vector<VID_TYPE>> cppath_back_it);
 
 // WARN!!未实现 未测试
 /*remove all 2-vertex-cut in g
 given g: 2connected, any 2-vertex-cut excludes s or t
 return: 1:solved 0:no solution -1(TIME_EXCEED_RESULT): time limit exceed*/
-int remove_2vCut(Graph &g, int s, int t, std::back_insert_iterator<std::vector<int>> path1_back_it, std::back_insert_iterator<std::vector<int>> path2_back_it);
+int remove_2vCut(Graph &g, VID_TYPE s, VID_TYPE t, std::back_insert_iterator<std::vector<VID_TYPE>> path1_back_it, std::back_insert_iterator<std::vector<VID_TYPE>> path2_back_it);
 
 #endif //_TWOCONNECTED_H

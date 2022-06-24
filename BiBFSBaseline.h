@@ -7,11 +7,11 @@
 class VisitedNode
 {
 public:
-    int v;
+    VID_TYPE v;
     int depth_bfs;
     int previous_visited_inBFS_sz;
     std::vector<VisitedNode *> previous_visited_inBFS;
-    VisitedNode(int _v, int _depth)
+    VisitedNode(VID_TYPE _v, int _depth)
     {
         this->v = _v;
         this->depth_bfs = _depth;
@@ -38,9 +38,9 @@ class BiBFSBaseline
     // path1:第一条独立路径
     // 目前的实现中存储的path1_vSeq、path2_vSeq不包含出发点和结束点，path1_vSet包含
     // one Vertex may corresponds to more than 1 VisitedNode, that's why choosing Vertex instead of VisitedNode
-    std::set<int> path1_vSet;
-    std::deque<int> path1_vSeq, path2_vSeq;
-    int path1_joint;
+    std::set<VID_TYPE> path1_vSet;
+    std::deque<VID_TYPE> path1_vSeq, path2_vSeq;
+    VID_TYPE path1_joint;
     Graph *G;
 
     /*bibfs_based dfs枚举path: 按VisitedNode.previous_visited_inBFS dfs*/
@@ -59,13 +59,13 @@ class BiBFSBaseline
     int find_path2();
 
     // print with newline
-    void print_pathln(std::deque<int> path_vSeq, bool print_st = 0);
+    void print_pathln(std::deque<VID_TYPE> path_vSeq, bool print_st = 0);
 
 public:
-    std::map<int, VisitedNode *> src_v2visited, tat_v2visited;
+    std::map<VID_TYPE, VisitedNode *> src_v2visited, tat_v2visited;
     long long src_side_max_depth, max_depth_sum; // tat_side_max_depth
     // max_depth in bibfs, limit path1 search depth within them
-    int sv, tv;
+    VID_TYPE sv, tv;
 
     BiBFSBaseline();
     // release src_v2visited and tat_v2visited
@@ -74,11 +74,11 @@ public:
     void clear_path2();
     // fill src_v2visited and tat_v2visited
     // add s and t to path1_vSet
-    int bibfs(Graph &g, long long side_depth, int s, int t);
+    int bibfs(Graph &g, long long side_depth, VID_TYPE s, VID_TYPE t);
 
     //对于一对顶点（已经完成Find2independentPath::bibfs）枚举path；
     // return: 1:succeed 0:failed -1(TIME_EXCEED_RESULT):exceeding time
-    //能否找到找两条独立路径（fill std::deque<Vertex *> path1_vSeq, path2_vSeq;）
+    //能否找到找两条独立路径（fill std::deque<VID_TYPE> path1_vSeq, path2_vSeq;）
     int run();
 
     void print_path1path2(bool print_st = 0);
@@ -94,16 +94,17 @@ public:
 
 // return: 1:succeed 0:failed -1(TIME_EXCEED_RESULT):exceeding time 3(DEPTH_LIMIT_EXCEED_RESULT):exceeding depth
 // side_depth: path1单侧搜索深度 传入LLONG_MAX认为搜穿
-int baseline(Graph &g, long long side_depth, int s, int t, bool print_result);
+int baseline(Graph &g, long long side_depth, VID_TYPE s, VID_TYPE t, bool print_result);
 
 // sort joints according to src_v2visited(tat) parents total and diff num
+// for print needs
 struct VertexWithNum
 {
-    int v;
+    VID_TYPE v;
     int sum;
     int diff;
     VertexWithNum() : v(0), sum(0), diff(0) {}
-    VertexWithNum(int v0, int n1, int n2) : v(v0), sum(n1 + n2)
+    VertexWithNum(VID_TYPE v0, int n1, int n2) : v(v0), sum(n1 + n2)
     {
         diff = std::abs(n1 - n2);
     }
@@ -120,6 +121,6 @@ struct VertexWithNum
 
 // return max searching depth
 // return -1 if timeout
-long long bfs(long long stepNum, Graph &g, int vid, std::map<int, VisitedNode *> &v2visited);
+long long bfs(long long stepNum, Graph &g, VID_TYPE vid, std::map<VID_TYPE, VisitedNode *> &v2visited);
 
 #endif //_BIBFSBASELINE_H

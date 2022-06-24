@@ -28,10 +28,10 @@ int main1(int argc, char **argv)
     {
         pairs_cnt = pairs_upper;
     }
-    std::set<std::pair<int, int>> st_pairs;
+    std::set<std::pair<VID_TYPE, VID_TYPE>> st_pairs;
     srand(time(0));
     g.generate_rand_vpairs(pairs_cnt, st_pairs);
-    int s, t, bs, bt;
+    VID_TYPE s, t, bs, bt;
     // st_pairs = {{1, 7}}; //{5, 10}
     for (auto pair : st_pairs)
     {
@@ -42,16 +42,16 @@ int main1(int argc, char **argv)
         bt = t;
         std::vector<Edge> boost_before, boost_after;
         bool boost_re = st_biconnected_component(g_boost, bs, bt, boost_before, boost_after, 0);
-        std::unordered_map<int, int> new2old;
-        bool my_re = st_biconnected_component(g, s, t, new2old);
+        std::unordered_map<VID_TYPE, VID_TYPE> new2old;
+        bool my_re = rec_st_biconnected_component(g, s, t, new2old);
         std::vector<Edge> after;
         if (my_re)
         {
-            int n = g.vertexnum();
-            for (int v = 0; v < n; ++v)
+            VID_TYPE n = g.vertexnum();
+            for (VID_TYPE v = 0; v < n; ++v)
             {
-                std::vector<int> nbs = g.get_neighbors(v);
-                for (int nb : nbs)
+                std::vector<VID_TYPE> nbs = g.get_neighbors(v);
+                for (VID_TYPE nb : nbs)
                 {
                     if (v < nb)
                     {
@@ -132,13 +132,13 @@ int main1(int argc, char **argv)
         if (boost_re)
         {
             fout << "boost_before vertex:" << std::endl;
-            std::set<int> boost_V;
+            std::set<VID_TYPE> boost_V;
             for (auto &e : boost_before)
             {
                 boost_V.insert(e.sv);
                 boost_V.insert(e.tv);
             }
-            for (int v : boost_V)
+            for (VID_TYPE v : boost_V)
             {
                 fout << v << std::endl;
             }
@@ -152,9 +152,9 @@ int main1(int argc, char **argv)
         if (my_re)
         {
             fout << "my_before vertex:" << std::endl;
-            for (int v = 0; v < n; ++v)
+            for (VID_TYPE v = 0; v < n; ++v)
             {
-                std::vector<int> nbs = g.get_neighbors(v);
+                std::vector<VID_TYPE> nbs = g.get_neighbors(v);
                 if (nbs.empty() == 0)
                 {
                     fout << v << std::endl;
@@ -190,20 +190,20 @@ int main2(int argc, char **argv)
     {
         pairs_cnt = pairs_upper;
     }
-    std::set<std::pair<int, int>> st_pairs;
+    std::set<std::pair<VID_TYPE, VID_TYPE>> st_pairs;
     srand(time(0));
     g.generate_rand_vpairs(pairs_cnt, st_pairs);
-    int s, t;
+    VID_TYPE s, t;
     // st_pairs = {{7, 5}}; //{{0, 11}};{{1, 7}};
     for (auto pair : st_pairs)
     {
         s = pair.first;
         t = pair.second;
         print_with_colorln(RED, "s:" + std::to_string(s) + " t:" + std::to_string(t));
-        std::vector<int> s_neighbors = g.get_neighbors(s); //= g.delete_vertex(s);
-        std::vector<bctreeNode> bctree;                    // idx is comp number too, parent pointer representation
-        int t_comp;                                        // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
-        std::vector<std::set<int>> comps_V;                // comp number->comps vertex set
+        std::vector<VID_TYPE> s_neighbors = g.get_neighbors(s); //= g.delete_vertex(s);
+        std::vector<bctreeNode> bctree;                         // idx is comp number too, parent pointer representation
+        int t_comp;                                             // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+        std::vector<std::set<VID_TYPE>> comps_V;                // comp number->comps vertex set
         std::vector<std::vector<int>> s_adj_comp;
         bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
 #if DEBUG_LEVEL <= DEBUG
@@ -233,16 +233,16 @@ int main3(int argc, char **argv)
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
-    std::vector<int> ts = {1, 7, 0};
-    std::vector<int> path;
-    std::back_insert_iterator<std::vector<int>> path_back_it(path);
+    std::vector<VID_TYPE> ts = {1, 7, 0};
+    std::vector<VID_TYPE> path;
+    std::back_insert_iterator<std::vector<VID_TYPE>> path_back_it(path);
     for (auto t : ts)
     {
         print_with_colorln(RED, " t:" + std::to_string(t));
-        std::vector<int> s_neighbors;
-        std::vector<bctreeNode> bctree;     // idx is comp number too, parent pointer representation
-        int t_comp;                         // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
-        std::vector<std::set<int>> comps_V; // comp number->comps vertex set
+        std::vector<VID_TYPE> s_neighbors;
+        std::vector<bctreeNode> bctree;          // idx is comp number too, parent pointer representation
+        int t_comp;                              // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+        std::vector<std::set<VID_TYPE>> comps_V; // comp number->comps vertex set
         std::vector<std::vector<int>> s_adj_comp;
         bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
         print_with_colorln(BLUE, "t_is_cut_point:" + std::to_string(t_is_cut_point));
@@ -250,7 +250,7 @@ int main3(int argc, char **argv)
         print_comps_V(comps_V);
         for (size_t i = 0; i < comps_V.size(); ++i)
         {
-            for (int startv : comps_V[i])
+            for (VID_TYPE startv : comps_V[i])
             {
                 std::cout << "start_comp(" << i << ")startv:" << startv << "->" << t << ":" << std::endl;
                 path.clear();
@@ -285,14 +285,15 @@ int main4(int argc, char **argv)
         {7, 9},
         {-1, 10}};
     std::vector<int> leaves = {8, 9, 0, 1, 4};
-    int n = 11;
+    VID_TYPE n = 11;
     int t_comp = 10;
     print_with_colorln(BLUE, "comp:\tancestor");
-    for (int i = 0; i < n; ++i)
+    for (VID_TYPE i = 0; i < n; ++i)
     {
         std::cout << i << "\t" << get_root_comp(i, bctree, t_comp) << std::endl;
     }
-    int compu, compv, u, v;
+    int compu, compv;
+    VID_TYPE u, v;
     std::vector<std::vector<int>> s_adj_comp = {
         {8, 1},
         {9},
@@ -307,9 +308,9 @@ int main4(int argc, char **argv)
     std::cout << "comp\tidx\n"
               << compu << "\t" << u << "\n"
               << compv << "\t" << v << std::endl;*/
-    int t = 10;
-    std::vector<int> cppath;
-    std::back_insert_iterator<std::vector<int>> cppath_back_it(cppath);
+    VID_TYPE t = 10;
+    std::vector<VID_TYPE> cppath;
+    std::back_insert_iterator<std::vector<VID_TYPE>> cppath_back_it(cppath);
     for (int leafcomp : leaves)
     {
         cppath.clear();
@@ -341,12 +342,12 @@ int main5(int argc, char **argv)
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
-    std::vector<int> s_neighbors = g.delete_vertex(3);
+    std::vector<VID_TYPE> s_neighbors = g.delete_vertex(3);
 
     g_copy = g;
-    int s = 0;
-    int t = 4;
-    std::unordered_map<int, int> new2old;
+    VID_TYPE s = 0;
+    VID_TYPE t = 4;
+    std::unordered_map<VID_TYPE, VID_TYPE> new2old;
     /* my root:s*/
     // st_biconnected_component(g, s, t, new2old);
 
@@ -368,9 +369,9 @@ int main5(int argc, char **argv)
 
     /* my build_bctree root:t*/
     ///*
-    std::vector<bctreeNode> bctree;     // idx is comp number too, parent pointer representation
-    int t_comp;                         // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
-    std::vector<std::set<int>> comps_V; // comp number->comps vertex set
+    std::vector<bctreeNode> bctree;          // idx is comp number too, parent pointer representation
+    int t_comp;                              // if t is not cutpoint: which comp is block(t); if is cutpoint: we set -1
+    std::vector<std::set<VID_TYPE>> comps_V; // comp number->comps vertex set
     std::vector<std::vector<int>> s_adj_comp;
     t = s;
     bool t_is_cut_point = build_bctree(g, t, s_neighbors, bctree, t_comp, comps_V, s_adj_comp);
@@ -401,7 +402,7 @@ int main(int argc, char **argv)
         return -1;
     }
     g_copy = g;
-    std::set<std::pair<int, int>> st_pairs;
+    std::set<std::pair<VID_TYPE, VID_TYPE>> st_pairs;
     /*
     for (int i = 0; i < 10; ++i)
     {
@@ -411,7 +412,7 @@ int main(int argc, char **argv)
         }
     }
     */
-    int s, t;
+    VID_TYPE s, t;
     st_pairs = {{107, 263249}};
     for (auto pair : st_pairs)
     {
