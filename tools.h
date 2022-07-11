@@ -19,9 +19,9 @@
 #include <thread>
 #include <assert.h>
 #include <pthread.h>
+#include "rocksdb/db.h"
 
 #include "config.h"
-//#include "dbengine/rocksdb.h"
 
 void Assert(bool exp, std::string s);
 void printErrorWithLocation(std::string s, const char *FILE__, int LINE__);

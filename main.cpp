@@ -27,7 +27,7 @@ bool is_time_out;
 int main(int argc, char **argv)
 {
     // TVEGraph g, g_copy;
-    EGraph g, g_copy;
+    EGraph g; //, g_copy;
 
     std::string gfname, vfname, outfname, method;
     if (argc < 7)
@@ -96,20 +96,20 @@ int main(int argc, char **argv)
         printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
         return -1;
     }
-    g_copy = g;
+    // g_copy = g;
 
     print_with_colorln(GREEN, "loading vertex pairs...");
     std::vector<std::pair<int, int>> st_pairs;
     std::ifstream fin(vfname);
     int s, t;
-    /*
+    ///*
     for (int i = 0; ((i < pairs_cnt) || (pairs_cnt == -1)) && fin >> s >> t; ++i)
     {
         st_pairs.emplace_back(s, t);
     }
-    */
+    //*/
 
-    ///*
+    /*
     for (int i = 0; i < 10; ++i)
     {
         for (int j = i + 1; j < 10; ++j)
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
             st_pairs.emplace_back(i, j);
         }
     }
-    //*/
+    */
 
     int cnt = 0, scnt = 0, tcnt = 0; // for average computing
     double average_d = 0;            // unit: second
@@ -176,6 +176,7 @@ int main(int argc, char **argv)
                 if (status == std::future_status::timeout)
                 {
                     is_time_out = 1; // this would trigger test point return earlier
+                    // std::cout << "is_time_out set" << std::endl;
                 }
                 else if (status == std::future_status::deferred)
                 {
@@ -215,7 +216,14 @@ int main(int argc, char **argv)
             dd = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
             d += dd;
             if (method == "bestbound")
-                g = g_copy;
+            {
+                // recover graph
+                if (g.buildGraph(gfname) == 0)
+                {
+                    printErrorWithLocation("buildGraph failed!", __FILE__, __LINE__);
+                    return -1;
+                }
+            }
         }
         moving_average(average_d, d, cnt);
         std::cout << "\ttime:" << d / (st_pairs.size()) << std::endl;

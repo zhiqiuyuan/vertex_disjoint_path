@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 #include "BoostTools.h"
-
+/*注意，这里的实现是Graph的存储为：顶点从0开始连续id的*/
 void to_boost_graph(graph_t &g, Graph &src)
 {
     VID_TYPE n = src.vertexnum();
@@ -128,7 +128,7 @@ bool st_biconnected_component(graph_t &g, VID_TYPE &s, VID_TYPE &t, std::vector<
     return st_one_block;
 }
 
-bool rec_st_biconnected_component(Graph &g, VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
+bool rec_st_biconnected_component(MemGraph &g, VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
 {
     VID_TYPE n = g.vertexnum();
 
@@ -176,7 +176,7 @@ bool rec_st_biconnected_component(Graph &g, VID_TYPE &s, VID_TYPE &t, std::unord
                         }
                         if (contain_s && contain_t)
                         {
-                            g.write_graph(s, t, new2old, comp);
+                            g.write_graph(comp);
                             return 1;
                         }
                     }

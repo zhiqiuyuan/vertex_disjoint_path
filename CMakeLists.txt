@@ -48,8 +48,6 @@ set(MAIN_FILE_LIST
     TwoConnected.h
     BiBFSBaseline.cpp
     BiBFSBaseline.h
-    BoostTools.h
-    BoostTools.cpp
     Graph.cpp
     Graph.h
     DataSetGraph.cpp
@@ -59,5 +57,6 @@ set(MAIN_FILE_LIST
     config.h
 )
 add_executable(main ${MAIN_FILE_LIST})
+add_executable(baseline ${MAIN_FILE_LIST})
 
 add_executable(tmp tmp.cpp)

@@ -39,84 +39,51 @@ void Graph::print_graph()
     for (VID_TYPE i = 0; i < vertex_num; ++i)
     {
         std::cout << i << ": ";
-        for (VID_TYPE n : get_neighbors(i))
+        std::vector<VID_TYPE> nbrs = get_neighbors(i);
+        for (VID_TYPE n : nbrs)
         {
             std::cout << n << " ";
         }
         std::cout << std::endl;
     }
 }
-void Graph::print_new2old_graph(const std::unordered_map<VID_TYPE, VID_TYPE> &new2old)
+void MemGraph::write_graph(const std::unordered_set<VID_TYPE> &V)
 {
-    print_with_colorln(BLUE, "\tmap new to old:");
-    std::cout << "vertex_num:" << vertex_num << std::endl;
-    std::cout << "vertices:";
-    for (VID_TYPE i = 0; i < vertex_num; ++i)
+    vertex_num = V.size();
+
+    VID_TYPE sz = neighbors.size();
+    for (VID_TYPE v = 0; v < sz; ++v)
     {
-        std::cout << new2old.at(i) << " ";
-    }
-    std::cout << "\nneighbors:" << std::endl;
-    for (VID_TYPE i = 0; i < vertex_num; ++i)
-    {
-        std::cout << new2old.at(i) << ": ";
-        for (VID_TYPE n : get_neighbors(i))
+        if (V.count(v) == 0)
         {
-            std::cout << new2old.at(n) << " ";
+            neighbors[v].clear();
+            neighbors[v].shrink_to_fit(); // release rest memory
         }
-        std::cout << std::endl;
-    }
-}
-
-void MemGraph::write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::vector<VID_TYPE> &V)
-{
-    std::unordered_map<VID_TYPE, VID_TYPE> old2new;
-    std::set<VID_TYPE> old;
-    VID_TYPE n = V.size();
-    for (VID_TYPE i = 0; i < n; ++i)
-    {
-        old.insert(V[i]);
-    }
-    VID_TYPE i = 0;
-    for (VID_TYPE oldv : old) // ensure mapping using seq in set
-    {
-        old2new[oldv] = i;
-        new2old[i] = oldv;
-        ++i;
-    }
-
-    std::vector<std::vector<VID_TYPE>> new_neighbors(n);
-    std::vector<VID_TYPE> old_neighbor;
-    VID_TYPE newv;
-    for (VID_TYPE oldv : V)
-    {
-        newv = old2new[oldv];
-        old_neighbor = neighbors[oldv];
-        for (VID_TYPE v : old_neighbor)
+        else
         {
-            if (old.count(v))
+            VID_TYPE idx = 0;
+            for (VID_TYPE w : neighbors[v])
             {
-                new_neighbors[newv].push_back(old2new[v]);
+                if (V.count(w))
+                {
+                    neighbors[v][idx++] = w;
+                }
             }
+            neighbors[v].resize(idx);
+            neighbors[v].shrink_to_fit();
         }
     }
-    neighbors = new_neighbors;
-    vertex_num = n;
-    s = old2new[s];
-    t = old2new[t];
 
 #if DEBUG_LEVEL <= TRACE
     print_graph();
-    print_new2old_graph(new2old);
-    print_with_colorln(BLUE, "\told2new:");
-    print_umapln(old2new);
 #endif //#if DEBUG_LEVEL <= TRACE
 }
-void MemGraph::write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::set<VID_TYPE> &V)
+void MemGraph::write_graph(const std::vector<VID_TYPE> &Vvec)
 {
-    std::vector<VID_TYPE> vv;
-    for (VID_TYPE v : V)
+    std::unordered_set<VID_TYPE> V;
+    for (VID_TYPE v : Vvec)
     {
-        vv.push_back(v);
+        V.insert(v);
     }
-    write_graph(s, t, new2old, vv);
+    write_graph(V);
 }

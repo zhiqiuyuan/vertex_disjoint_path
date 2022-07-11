@@ -303,6 +303,10 @@ int BiBFSBaseline::find_path2()
 #endif //#if DEBUG_LEVEL <= TRACE
             for (VID_TYPE n : neighbors)
             {
+#if TIME_KILL_ENABLE == 1
+                if (is_time_out)
+                    return TIME_EXCEED_RESULT;
+#endif //#if TIME_KILL_ENABLE == 1
                 if (path1_vSeq.empty() && curr == sv && n == tv)
                 { // path1是s->t这样的路径，path2要避免直接s->t
                     continue;
@@ -336,6 +340,10 @@ int BiBFSBaseline::find_path2()
 #endif //#if DEBUG_LEVEL <= TRACE
             for (VID_TYPE n : neighbors)
             {
+#if TIME_KILL_ENABLE == 1
+                if (is_time_out)
+                    return TIME_EXCEED_RESULT;
+#endif //#if TIME_KILL_ENABLE == 1
                 if (path1_vSeq.empty() && curr == tv && n == sv)
                 { // path1是s->t这样的路径，path2要避免直接s->t
                     continue;
@@ -539,6 +547,7 @@ int baseline(Graph &g, long long side_depth, VID_TYPE s, VID_TYPE t, bool print_
     print_with_colorln(GREEN, "\t\tstep1: bibfs...");
     if (act.bibfs(g, side_depth, s, t) == TIME_EXCEED_RESULT)
     {
+        // std::cout << "in bibfs: is_time_out" << std::endl;
         print_with_colorln(BLUE, "time limit exceed.");
         return TIME_EXCEED_RESULT;
     }
@@ -624,6 +633,7 @@ long long bfs(long long stepNum, Graph &g, VID_TYPE vid, std::map<VID_TYPE, Visi
 #if TIME_KILL_ENABLE == 1
         if (is_time_out)
         {
+            // std::cout << "in bfs: is_time_out" << std::endl;
             return -1;
         }
 #endif //#if TIME_KILL_ENABLE == 1
@@ -636,6 +646,13 @@ long long bfs(long long stepNum, Graph &g, VID_TYPE vid, std::map<VID_TYPE, Visi
 
             for (size_t j = 0; j < eList.size(); j++)
             {
+#if TIME_KILL_ENABLE == 1
+                if (is_time_out)
+                {
+                    // std::cout << "in bfs: is_time_out" << std::endl;
+                    return -1;
+                }
+#endif //#if TIME_KILL_ENABLE == 1
                 VID_TYPE nextV = eList[j];
                 VisitedNode *nextVisited = v2visited[nextV];
                 //未曾访问过

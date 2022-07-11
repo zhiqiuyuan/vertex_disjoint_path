@@ -3,7 +3,6 @@
 
 #include "tools.h"
 // v in file are vid
-// vid are [0,vertex_num)
 // no parallel edge
 class Graph
 {
@@ -13,26 +12,16 @@ protected:
 public:
     Graph() : vertex_num(0) {}
     VID_TYPE vertexnum() { return vertex_num; }
-    // return new vertex_num
-    virtual VID_TYPE add_vertex() = 0;
     virtual void add_edge(VID_TYPE s, VID_TYPE t) = 0;
-    virtual std::vector<VID_TYPE> &get_neighbors(VID_TYPE vid) = 0;
-    virtual void set_neighbors(VID_TYPE vid, std::vector<VID_TYPE> new_ns) = 0;
-    virtual void set_all_neighbors(std::vector<std::vector<VID_TYPE>> &new_neighbors, VID_TYPE n) = 0;
-    // return neighbors[vid]
-    // NOTE: won't update vertex_num!! since all vertex id are not changed
-    // NOTE: adjacent list for undirected graph: 2 entry 1 link
-    virtual std::vector<VID_TYPE> delete_vertex(VID_TYPE vid) = 0;
-    virtual void recover_vertex(VID_TYPE vid, const std::vector<VID_TYPE> &nbrs) = 0;
+    virtual VID_TYPE get_degree(VID_TYPE vid) = 0;
+    virtual std::vector<VID_TYPE> get_neighbors(VID_TYPE vid) = 0;
 
-    VID_TYPE get_degree(VID_TYPE vid)
-    {
-        assert(vid >= 0 && vid < vertex_num);
-        return get_neighbors(vid).size();
-    }
+    // return build succeed or not
+    virtual bool buildGraph(std::string fname) = 0;
+
     std::vector<VID_TYPE> intersect_neighbors(VID_TYPE s, VID_TYPE t)
     {
-        assert(s >= 0 && s < vertex_num && t >= 0 && t < vertex_num);
+        assert(s >= 0 && t >= 0);
         std::vector<VID_TYPE> nbrs1 = get_neighbors(s), nbrs2 = get_neighbors(t);
         std::sort(nbrs1.begin(), nbrs1.end());
         std::sort(nbrs2.begin(), nbrs2.end());
@@ -59,62 +48,202 @@ public:
         return re;
     }
     void print_graph();
-    void print_new2old_graph(const std::unordered_map<VID_TYPE, VID_TYPE> &new2old);
     void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<VID_TYPE, VID_TYPE>> &st_pairs);
-
-    // new g: vertex in V, all edges in g between V, remapping V->[0,|V|)
-    // return new2old mapping, return new st and new g
-    // new2old for translating path to the graph before reduction
-    virtual void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::vector<VID_TYPE> &V) = 0;
-    virtual void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::set<VID_TYPE> &V) = 0;
-
-    // return build succeed or not
-    virtual bool buildGraph(std::string fname) = 0;
 };
 
+//  degree==0 then this vertex is not included in vertex_num
 class MemGraph : public Graph
 {
 protected:
     std::vector<std::vector<VID_TYPE>> neighbors;
 
 public:
-    MemGraph() {}
-    VID_TYPE add_vertex()
+    MemGraph() { vertex_num = 0; }
+    void add_vertex(VID_TYPE s)
     {
-        ++vertex_num;
-        neighbors.push_back({});
-        return vertex_num;
+        if (s >= neighbors.size())
+        {
+            ++vertex_num;
+            neighbors.resize(s + 1, {});
+        }
+        else if (neighbors[s].empty())
+        {
+            ++vertex_num;
+        }
     }
     void add_edge(VID_TYPE s, VID_TYPE t)
     {
         assert(s >= 0 && t >= 0);
-        if (s >= vertex_num || t >= vertex_num)
-        {
-            vertex_num = std::max(s, t) + 1;
-            neighbors.resize(vertex_num, {});
-        }
+        add_vertex(s);
+        add_vertex(t);
         neighbors[s].push_back(t);
         neighbors[t].push_back(s);
     }
     VID_TYPE get_degree(VID_TYPE vid)
     {
-        assert(vid >= 0 && vid < vertex_num);
+        assert(vid >= 0 && vid < neighbors.size());
         return neighbors[vid].size();
     }
-    std::vector<VID_TYPE> &get_neighbors(VID_TYPE vid)
+    std::vector<VID_TYPE> get_neighbors(VID_TYPE vid)
     {
-        assert(vid >= 0 && vid < vertex_num);
+        assert(vid >= 0 && vid < neighbors.size());
         return neighbors[vid];
     }
-    void set_neighbors(VID_TYPE vid, std::vector<VID_TYPE> new_ns)
+    std::vector<VID_TYPE> delete_vertex(VID_TYPE vid)
     {
-        assert(vid >= 0 && vid < vertex_num);
-        neighbors[vid] = new_ns;
+        assert(vid >= 0 && vid < neighbors.size() && neighbors[vid].size());
+        for (auto iter = neighbors.begin(); iter != neighbors.end(); ++iter)
+        {
+            std::vector<VID_TYPE> &nbrs = *iter;
+            std::vector<VID_TYPE>::iterator it;
+            if ((it = std::find(nbrs.begin(), nbrs.end(), vid)) != nbrs.end())
+            {
+                nbrs.erase(it); //不会释放内存
+            }
+        }
+        std::vector<VID_TYPE> tmp = neighbors[vid];
+        neighbors[vid].clear(); //不会释放内存
+        --vertex_num;
+        return tmp;
     }
-    void set_all_neighbors(std::vector<std::vector<VID_TYPE>> &new_neighbors, VID_TYPE n)
+    void recover_vertex(VID_TYPE vid, const std::vector<VID_TYPE> &nbrs)
     {
-        neighbors = new_neighbors;
-        vertex_num = n;
+        assert(vid >= 0 && vid < neighbors.size());
+        neighbors[vid] = nbrs;
+        for (VID_TYPE v : nbrs)
+        {
+            neighbors[v].push_back(vid);
+        }
+        ++vertex_num;
+    }
+
+    // create new adjancent list representation in new_neighbors then copy
+    // new g: vertex in V, all edges in g between V
+    // return new g
+    void write_graph(const std::vector<VID_TYPE> &V);
+    void write_graph(const std::unordered_set<VID_TYPE> &V);
+
+    // load total graph into std::vector<std::vector<VID_TYPE>> neighbors
+    virtual bool buildGraph(std::string fname) = 0;
+};
+
+#define END_OF_VERTEX (VID_TYPE)(-1)
+// if next_vid==END_OF_VERTEX: there's no more vertex
+// a record (key:END_OF_VERTEX, value:begin_vid) is stored in db
+#define HEADER_LEN 3 // header len in each value: next vertex; degree; first neighbor's index in neighbors
+
+/*
+class DBGraph : public Graph
+{
+protected:
+    rocksdb::DB *db;
+    std::string db_path;
+
+public:
+    DBGraph(std::string db_path0) : db_path(db_path0)
+    {
+        rocksdb::Options options;
+        options.create_if_missing = false;
+        rocksdb::Status status = rocksdb::DB::Open(options, db_path0, &db);
+
+        // missing: create db
+        if (status.ok() == 0)
+        {
+            std::cout << status.ToString() << std::endl;
+
+            // free
+            delete db;
+
+            options.create_if_missing = true;
+            status = rocksdb::DB::Open(options, db_path0, &db);
+            assert(status.ok());
+        }
+        vertex_num = 0;
+    }
+    rocksdb::Slice MAKE_KEY_SLICE(VID_TYPE s)
+    {
+        return rocksdb::Slice((const char *)&s, sizeof(VID_TYPE));
+    }
+    void str2nbrs(std::string &slice, std::vector<VID_TYPE> &data)
+    {
+        VID_TYPE *d = (VID_TYPE *)slice.c_str();
+        size_t pos = d[2];
+        size_t deg = d[1];
+        d += HEADER_LEN; // now d starts at nbr
+        for (size_t i = 0; i < deg; ++i)
+        {
+            // std::cout << "\t" << d[2*pos] << std::endl;
+            data.push_back(d[2 * pos]);
+            pos = d[2 * pos + 1];
+        }
+    }
+    void print_value(const char *str, size_t bytes_len)
+    {
+        const VID_TYPE *d = (const VID_TYPE *)str;
+        size_t len = bytes_len / sizeof(VID_TYPE);
+        for (size_t i = 0; i < len; ++i)
+        {
+            std::cout << d[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+    rocksdb::Status add_nbr(VID_TYPE s, VID_TYPE nbr)
+    {
+        std::string info;
+        rocksdb::Slice skey = MAKE_KEY_SLICE(s);
+        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), skey, &info);
+        if (status.ok())
+        {
+            // add nbr
+            size_t sz = info.size();
+            info.resize(sz + 2 * sizeof(VID_TYPE));
+
+            const char *str = info.c_str();
+            VID_TYPE deg = *((VID_TYPE *)(str + sizeof(VID_TYPE)));
+            *((VID_TYPE *)(str + sz)) = nbr;
+            *((VID_TYPE *)(str + sz + sizeof(VID_TYPE))) = deg + 1; // next nbr idx
+
+            // update degree
+            *((VID_TYPE *)(str + sizeof(VID_TYPE))) = deg + 1;
+
+            // print_value(str, sz + 2 * sizeof(VID_TYPE));
+
+            status = db->Put(rocksdb::WriteOptions(), skey, rocksdb::Slice(str, info.size()));
+        }
+        else if (status.IsNotFound())
+        {
+            ++vertex_num;
+            // next_vid, degree, first_nbr_idx, nbr, next_nbr_idx
+            VID_TYPE value[HEADER_LEN + 2] = {END_OF_VERTEX, 1, 0, nbr, 1};
+            status = db->Put(rocksdb::WriteOptions(), skey, rocksdb::Slice((const char *)value, (HEADER_LEN + 2) * sizeof(VID_TYPE)));
+        }
+        return status;
+    }
+
+    void add_edge(VID_TYPE s, VID_TYPE t)
+    {
+        rocksdb::Status status = add_nbr(s, t);
+        assert(status.ok());
+        status = add_nbr(t, s);
+        assert(status.ok());
+    }
+    VID_TYPE get_degree(VID_TYPE vid)
+    {
+        rocksdb::Slice vid_s = MAKE_KEY_SLICE(vid);
+        std::string info;
+        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), vid_s, &info);
+        assert(status.ok());
+        return ((VID_TYPE *)info.c_str())[1];
+    }
+    std::vector<VID_TYPE> get_neighbors(VID_TYPE vid)
+    {
+        rocksdb::Slice vid_s = MAKE_KEY_SLICE(vid);
+        std::string info;
+        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), vid_s, &info);
+        assert(status.ok());
+        std::vector<VID_TYPE> nbrs;
+        str2nbrs(info, nbrs);
+        return nbrs;
     }
     std::vector<VID_TYPE> delete_vertex(VID_TYPE vid)
     {
@@ -143,21 +272,13 @@ public:
     }
 
     // create new adjancent list representation in std::vector<std::vector<VID_TYPE>> new_neighbors then copy
-    void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::vector<VID_TYPE> &V);
-    void write_graph(VID_TYPE &s, VID_TYPE &t, std::unordered_map<VID_TYPE, VID_TYPE> &new2old, const std::set<VID_TYPE> &V);
+    // new g: vertex in V, all edges in g between V, remapping V->[0,|V|)
+    // return new st and new g
+    void write_graph(VID_TYPE &s, VID_TYPE &t, const std::vector<VID_TYPE> &V);
+    void write_graph(VID_TYPE &s, VID_TYPE &t, const std::set<VID_TYPE> &V);
 
     // load total graph into std::vector<std::vector<VID_TYPE>> neighbors
     virtual bool buildGraph(std::string fname) = 0;
-};
-
-/*
-class DBGraph : public Graph
-{
-protected:
-    DbEngine *db;
-
-public:
-    DBGraph() {}
 };
 */
 

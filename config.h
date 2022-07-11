@@ -13,7 +13,7 @@ typedef unsigned long long EID_TYPE; // edge_num
 #define DEPTH_LIMIT_EXCEED_RESULT 3
 
 // debug output level
-#define DEBUG_LEVEL 0 // output all higher and equal
+#define DEBUG_LEVEL 2 // output all higher and equal
 #define ERROR 4
 #define WARN 3
 #define INFO 2

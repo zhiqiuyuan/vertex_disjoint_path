@@ -9,13 +9,14 @@ bool TVEGraph::buildGraph(std::string fname)
         ("file open failed:" + fname);
         return 0;
     }
+    std::vector<std::vector<VID_TYPE>>{}.swap(neighbors); // release all memory(queue)
+    vertex_num = 0;
 
     char ty;
     VID_TYPE vertexNum;
     EID_TYPE edgeNum;
     fin >> ty >> vertexNum >> edgeNum; // t vnum enum
     vertex_num = vertexNum;
-    neighbors.resize(vertex_num);
 
     std::string no_use;
     std::getline(fin, no_use); // t vnum enum line
@@ -44,6 +45,8 @@ bool TVEGraph::buildGraph(std::string fname)
             return 0;
         }
         // s--t
+        add_edge(s, t);
+        /*
         // 避免重边
         std::vector<VID_TYPE> &snb = neighbors[s];
         std::vector<VID_TYPE> &tnb = neighbors[t];
@@ -55,6 +58,7 @@ bool TVEGraph::buildGraph(std::string fname)
         {
             tnb.push_back(s);
         }
+        */
     }
     fin.close();
     return 1;
@@ -68,6 +72,8 @@ bool EGraph::buildGraph(std::string fname)
         ("file open failed:" + fname);
         return 0;
     }
+    std::vector<std::vector<VID_TYPE>>{}.swap(neighbors); // release all memory(queue)
+    vertex_num = 0;
     // s->t
     unsigned s, t;
     // std::string no_use;
@@ -91,7 +97,8 @@ bool EGraph::buildGraph(std::string fname)
         }
         */
 
-        /*++i;
+        /*
+        ++i;
         if (i % 100000 == 0)
         {
             std::cout << "read " << i << " edges done." << std::endl;
