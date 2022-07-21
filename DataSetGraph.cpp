@@ -69,7 +69,7 @@ bool EGraph::buildGraph(std::string fname)
     std::ifstream fin(fname);
     if (fin.is_open() == 0)
     {
-        ("file open failed:" + fname);
+        print_with_colorln(RED, "file open failed:" + fname);
         return 0;
     }
     std::vector<std::vector<VID_TYPE>>{}.swap(neighbors); // release all memory(queue)

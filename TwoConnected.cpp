@@ -836,19 +836,19 @@ int build_bctree(Graph &g, VID_TYPE t, const std::vector<VID_TYPE> s_neighbors, 
     comps_V.resize(k);
 #if DEBUG_LEVEL <= TRACE
     print_with_colorln(BLUE, "vid\tlowpt:");
-    for (VID_TYPE i = 0; i < n; ++i)
+    for (auto &pr : lowpt)
     {
-        std::cout << i << "\t" << lowpt[i] << std::endl;
+        std::cout << pr.first << "\t" << pr.second << std::endl;
     }
     print_with_colorln(BLUE, "vid\tdfsnumber:");
-    for (VID_TYPE i = 0; i < n; ++i)
+    for (auto &pr : nr)
     {
-        std::cout << i << "\t" << nr[i] << std::endl;
+        std::cout << pr.first << "\t" << pr.second << std::endl;
     }
     print_with_colorln(BLUE, "vid\tpar:");
-    for (VID_TYPE i = 0; i < n; ++i)
+    for (auto &pr : p)
     {
-        std::cout << i << "\t" << p[i] << std::endl;
+        std::cout << pr.first << "\t" << pr.second << std::endl;
     }
 #endif //#if DEBUG_LEVEL <= TRACE
     return t_is_cut_point;

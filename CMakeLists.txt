@@ -44,6 +44,8 @@ add_executable(test ${TEST_FILE_LIST})
 
 set(MAIN_FILE_LIST
     main.cpp
+    MaxFlow.cpp
+    MaxFlow.h
     TwoConnected.cpp
     TwoConnected.h
     BiBFSBaseline.cpp
@@ -57,6 +59,5 @@ set(MAIN_FILE_LIST
     config.h
 )
 add_executable(main ${MAIN_FILE_LIST})
-add_executable(baseline ${MAIN_FILE_LIST})
 
 add_executable(tmp tmp.cpp)

@@ -51,6 +51,7 @@ public:
     void generate_rand_vpairs(int pairs_cnt, std::set<std::pair<VID_TYPE, VID_TYPE>> &st_pairs);
 };
 
+class SplitedGraph;
 //  degree==0 then this vertex is not included in vertex_num
 class MemGraph : public Graph
 {
@@ -125,6 +126,8 @@ public:
 
     // load total graph into std::vector<std::vector<VID_TYPE>> neighbors
     virtual bool buildGraph(std::string fname) = 0;
+
+    friend class SplitedGraph;
 };
 
 #define END_OF_VERTEX (VID_TYPE)(-1)

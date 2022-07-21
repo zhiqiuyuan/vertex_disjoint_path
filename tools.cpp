@@ -9,7 +9,7 @@ void print_with_colorln(int color_code, std::string s)
     std::cout << ADD_COLOR(color_code, s) << std::endl;
 }
 // template <typename T>
-void print_vectorln(std::vector<VID_TYPE> &v)
+void print_vectorln(const std::vector<VID_TYPE> &v)
 {
     for (VID_TYPE i : v)
     {
@@ -18,11 +18,19 @@ void print_vectorln(std::vector<VID_TYPE> &v)
     std::cout << std::endl;
 }
 // template <typename T>
-void print_setln(std::set<VID_TYPE> &v)
+void print_setln(const std::set<VID_TYPE> &v)
 {
     for (VID_TYPE i : v)
     {
         std::cout << i << " ";
+    }
+    std::cout << std::endl;
+}
+void print_usetln(const std::unordered_set<VID_TYPE> &v, VID_TYPE head)
+{
+    for (VID_TYPE i : v)
+    {
+        std::cout << head << " " << i << std::endl;
     }
     std::cout << std::endl;
 }
@@ -35,7 +43,16 @@ void print_queueln(std::queue<VID_TYPE> q)
     }
     std::cout << std::endl;
 }
-void print_dequeln(std::deque<VID_TYPE> q)
+void print_stackln(std::stack<VID_TYPE> q)
+{
+    while (q.empty() == 0)
+    {
+        std::cout << q.top() << " ";
+        q.pop();
+    }
+    std::cout << std::endl;
+}
+void print_dequeln(const std::deque<VID_TYPE> &q)
 {
     for (VID_TYPE i : q)
     {
@@ -47,7 +64,7 @@ void print_umapln(const std::unordered_map<VID_TYPE, VID_TYPE> &mp)
 {
     for (auto p : mp)
     {
-        std::cout << p.first << ":" << p.second << " ";
+        std::cout << p.first << " " << p.second << std::endl;
     }
     std::cout << std::endl;
 }

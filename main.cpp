@@ -1,10 +1,11 @@
 #include "tools.h"
 #include "DataSetGraph.h"
 #include "TwoConnected.h"
+#include "MaxFlow.h"
 #include "BiBFSBaseline.h"
 
 /* 命令行参数
- * -m method (baseline, bestbound, idea)
+ * -m method (baseline, bestbound, maxflow, idea)
  * -g graph_file
  * -p vertex_pair_file
  * -o output_dir
@@ -160,6 +161,11 @@ int main(int argc, char **argv)
                 future = std::async(std::launch::async, [&g, side_depth, s, t, i, repeat_times]()
                                     { return baseline(g, side_depth, s, t, i == repeat_times); });
             }
+            else if (method == "maxflow")
+            {
+                future = std::async(std::launch::async, [&g, s, t]()
+                                    { return maxflow(g, s, t); });
+            }
             else
             {
                 print_with_colorln(RED, "not supported method type: " + method);
@@ -202,6 +208,10 @@ int main(int argc, char **argv)
             {
                 result = baseline(g, side_depth, s, t, i == repeat_times);
             }
+            if (method == "maxflow")
+            {
+                result = maxflow(g, s, t);
+            }
             else
             {
                 print_with_colorln(RED, "not supported method type: " + method);
@@ -215,7 +225,7 @@ int main(int argc, char **argv)
             std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
             dd = double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den;
             d += dd;
-            if (method == "bestbound")
+            if (method == "bestbound" || method == "maxflow")
             {
                 // recover graph
                 if (g.buildGraph(gfname) == 0)
