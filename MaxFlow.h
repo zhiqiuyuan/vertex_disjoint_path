@@ -133,7 +133,7 @@ public:
     // return whether labeling can reach t
     // return -1(TIME_EXCEED_RESULT) if time exceed
     // 考虑到label stage在标记到t以及同层孩子就结束，所有有标记的顶点应该不会很多，采用哈希结构存储顶点到label，而不是每个顶点在邻接表中存储label
-    int dinic_label(std::unordered_map<VID_TYPE, VID_TYPE> &vid2label);
+    int dinic_label(std::unordered_map<VID_TYPE, VID_TYPE> &vid2label, VID_TYPE depth);
 
     // trace one path
     // return whether successfully trace a path, if so, fill it in path
@@ -173,10 +173,10 @@ public:
 };
 
 // run alg and print result
-int maxflow(MemGraph &g, VID_TYPE s, VID_TYPE t);
+int maxflow(MemGraph &g, VID_TYPE depth,VID_TYPE s, VID_TYPE t);
 
 // return 2VDPP has solution or not, if yes return solution in path1 and path2
 // return -1(TIME_EXCEED_RESULT) if time exceed
-int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE disjoint_path_num, std::vector<std::vector<VID_TYPE>> &disjoint_paths);
+int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE depth,VID_TYPE disjoint_path_num, std::vector<std::vector<VID_TYPE>> &disjoint_paths);
 
 #endif //_MAXFLOW_H

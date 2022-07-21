@@ -102,6 +102,11 @@ int main(int argc, char **argv)
     print_with_colorln(GREEN, "loading vertex pairs...");
     std::vector<std::pair<int, int>> st_pairs;
     std::ifstream fin(vfname);
+    if (fin.is_open() == 0)
+    {
+        print_with_colorln(RED, vfname + " opened failed!");
+        return 0;
+    }
     int s, t;
     ///*
     for (int i = 0; ((i < pairs_cnt) || (pairs_cnt == -1)) && fin >> s >> t; ++i)
@@ -163,8 +168,12 @@ int main(int argc, char **argv)
             }
             else if (method == "maxflow")
             {
-                future = std::async(std::launch::async, [&g, s, t]()
-                                    { return maxflow(g, s, t); });
+                if (side_depth != LLONG_MAX)
+                {
+                    side_depth *= 4;
+                }
+                future = std::async(std::launch::async, [&g, side_depth, s, t]()
+                                    { return maxflow(g, side_depth, s, t); });
             }
             else
             {
@@ -210,7 +219,11 @@ int main(int argc, char **argv)
             }
             if (method == "maxflow")
             {
-                result = maxflow(g, s, t);
+                if (side_depth != LLONG_MAX)
+                {
+                    side_depth *= 4;
+                }
+                result = maxflow(g, side_depth, s, t);
             }
             else
             {

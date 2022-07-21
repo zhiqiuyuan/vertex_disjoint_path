@@ -4,10 +4,10 @@
 extern bool is_time_out;
 #endif //#if TIME_KILL_ENABLE == 1
 
-int maxflow(MemGraph &g, VID_TYPE s, VID_TYPE t)
+int maxflow(MemGraph &g, VID_TYPE depth, VID_TYPE s, VID_TYPE t)
 {
     std::vector<std::vector<VID_TYPE>> paths;
-    int code = maxflow_based(g, s, t, 2, paths);
+    int code = maxflow_based(g, s, t, depth, 2, paths);
     if (code == 1)
     {
         if (paths.size() < 2)
@@ -32,7 +32,7 @@ int maxflow(MemGraph &g, VID_TYPE s, VID_TYPE t)
     return code;
 }
 
-int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE disjoint_path_num, std::vector<std::vector<VID_TYPE>> &disjoint_paths)
+int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE depth, VID_TYPE disjoint_path_num, std::vector<std::vector<VID_TYPE>> &disjoint_paths)
 {
     if (disjoint_path_num < 1)
     {
@@ -48,7 +48,7 @@ int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE disjoint_path_nu
     while (path_cnt < disjoint_path_num)
     {
         std::unordered_map<VID_TYPE, VID_TYPE> vid2label;
-        int code = (Gwrapper.G)->dinic_label(vid2label);
+        int code = (Gwrapper.G)->dinic_label(vid2label, depth);
 #if TIME_KILL_ENABLE == 1
         if (code == TIME_EXCEED_RESULT)
         {
@@ -93,15 +93,15 @@ int maxflow_based(MemGraph &g, VID_TYPE s, VID_TYPE t, VID_TYPE disjoint_path_nu
     return 0;
 }
 
-int SplitedGraph::dinic_label(std::unordered_map<VID_TYPE, VID_TYPE> &vid2label)
+int SplitedGraph::dinic_label(std::unordered_map<VID_TYPE, VID_TYPE> &vid2label, VID_TYPE depth)
 {
     std::queue<VID_TYPE> q, next_q;
     q.push(s);
     // labeling when pushing into queue
     vid2label[s] = 0;
     bool reached_t = 0;
-    VID_TYPE v, label;
-    while (q.empty() == 0)
+    VID_TYPE v, label = 0;
+    while (q.empty() == 0 && label <= depth)
     {
         // scan one level
         while (q.empty() == 0)
@@ -114,6 +114,10 @@ int SplitedGraph::dinic_label(std::unordered_map<VID_TYPE, VID_TYPE> &vid2label)
             q.pop();
             // scanning v
             label = vid2label[v] + 1;
+            if (label > depth)
+            {
+                break;
+            }
             for (VID_TYPE u : get_out_neighbors(v))
             {
 #if TIME_KILL_ENABLE == 1
